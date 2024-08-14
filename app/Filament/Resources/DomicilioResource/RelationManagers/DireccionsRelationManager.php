@@ -29,14 +29,14 @@ class DireccionsRelationManager extends RelationManager
                     ->searchable(),
 
                 Forms\Components\Select::make('ciudad_id')
-                    ->required()
                     ->preload()
                     ->native(false)
                     ->searchable()
                     ->live()
                     ->relationship('ciudad','nombre',
                         modifyQueryUsing: fn (Builder $query, Get $get) => $query->where('provincia_id','=',$get('provincia_id')))
-                    ->afterStateUpdated(fn (Set $set) => $set('ciudad_id', null)),
+                    //->afterStateUpdated(fn (Set $set) => $set('ciudad_id', null))
+                    ->required(),
 
                 Forms\Components\Select::make('parroquia_id')
                     ->preload()
@@ -44,7 +44,7 @@ class DireccionsRelationManager extends RelationManager
                     ->searchable()
                     ->live()
                     ->relationship('parroquia','nombre',
-                        modifyQueryUsing: fn (Builder $query, Get $get) => $query->where('ciudad_id',$get('ciudad_id'))),
+                        modifyQueryUsing: fn (Builder $query, Get $get) => $query->where('ciudad_id','=',$get('ciudad_id'))),
 
                 Forms\Components\TextInput::make('direccion')
                     ->required()
