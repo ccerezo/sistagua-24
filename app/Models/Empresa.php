@@ -34,4 +34,9 @@ class Empresa extends Model
     {
         return $this->morphMany(Direccion::class, 'direccionable');
     }
+    
+    public function contactos(): MorphMany
+    {
+        return $this->morphMany(Contacto::class, 'contactoable');
+    }
 }

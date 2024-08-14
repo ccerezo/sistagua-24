@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('direccions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('provincia_id')->nullable()->constrained('provincias')->nullOnDelete();
             $table->foreignId('ciudad_id')->nullable()->constrained('ciudads')->nullOnDelete();
             $table->foreignId('parroquia_id')->nullable()->constrained('parroquias')->nullOnDelete();
             $table->string('direccion',150)->nullable();
@@ -20,6 +21,7 @@ return new class extends Migration
             $table->string('ubicacion',180)->nullable();
             $table->string('latitud',80)->nullable();
             $table->string('longitud',80)->nullable();
+            $table->json('telefono',20)->nullable();
             $table->boolean('equipos_instalados')->default(true);
             $table->morphs('direccionable');
 

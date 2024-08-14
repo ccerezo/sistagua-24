@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\DomicilioResource\RelationManagers;
+namespace App\Filament\Resources\EmpresaResource\RelationManagers;
 
 use App\Models\Provincia;
 use Filament\Forms;
@@ -58,7 +58,6 @@ class DireccionsRelationManager extends RelationManager
                 Forms\Components\TagsInput::make('telefono'),
                 Forms\Components\Toggle::make('equipos_instalados')
             ])->columns(3);
-
     }
 
     public function table(Table $table): Table
@@ -70,6 +69,9 @@ class DireccionsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('parroquia.nombre'),
                 Tables\Columns\TextColumn::make('direccion'),
                 Tables\Columns\TextColumn::make('referencia'),
+                Tables\Columns\TextColumn::make('telefono')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->badge(),
                 Tables\Columns\IconColumn::make('equipos_instalados')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->boolean(),

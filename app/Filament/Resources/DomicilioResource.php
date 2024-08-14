@@ -167,6 +167,7 @@ class DomicilioResource extends Resource
     {
         return [
             RelationManagers\DireccionsRelationManager::class,
+            RelationManagers\ContactosRelationManager::class,
         ];
     }
 

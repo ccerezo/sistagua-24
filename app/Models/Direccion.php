@@ -9,10 +9,18 @@ class Direccion extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['direccion','referencia','ubicacion','latitud','longitud','equipos_instalados','ciudad_id','parroquia_id'];
+    protected $fillable = ['direccion','referencia','ubicacion','latitud','longitud','telefono','equipos_instalados','provincia_id','ciudad_id','parroquia_id'];
+
+    protected $casts = [
+        'telefono' => 'array',
+    ];
 
     public function direccionable() {
         return $this->morphTo();
+    }
+
+    public function provincia() {
+        return $this->belongsTo(Provincia::class);
     }
 
     public function ciudad() {

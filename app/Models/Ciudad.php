@@ -15,6 +15,10 @@ class Ciudad extends Model
         return $this->belongsTo(Provincia::class);
     }
 
+    public function direccions() {
+        return $this->hasMany(Direccion::class);
+    }
+
     public function parroquias() {
         return $this->hasMany(Parroquia::class);
     }
