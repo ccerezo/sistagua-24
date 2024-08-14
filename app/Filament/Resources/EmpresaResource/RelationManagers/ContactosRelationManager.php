@@ -2,9 +2,13 @@
 
 namespace App\Filament\Resources\EmpresaResource\RelationManagers;
 
+use App\Models\Contacto;
+use App\Models\Empresa;
 use Filament\Forms;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -19,6 +23,25 @@ class ContactosRelationManager extends RelationManager
     {
         return $form
             ->schema([
+                Forms\Components\Select::make('buscar_contacto')
+                    ->preload()
+                    ->options(Contacto::where('contactoable_type','=',Empresa::class)->get()->pluck('fullname', 'id'))
+                    ->searchable()
+                    ->live()
+                    ->afterStateUpdated(function (Get $get,Set $set) {
+                        $contacto = Contacto::find($get('buscar_contacto'));
+                        if($contacto) {
+                            $set('identificacion',$contacto->identificacion);
+                            $set('tipo_contacto_id',$contacto->tipo_contacto_id);
+                            $set('apellido1',$contacto->apellido1);
+                            $set('apellido2',$contacto->apellido2);
+                            $set('nombre1',$contacto->nombre1);
+                            $set('nombre2',$contacto->nombre2);
+                            $set('telefono',$contacto->telefono);
+                            $set('correo',$contacto->correo);
+                            $set('cumpleanios',$contacto->cumpleanios);
+                        }
+                    })->columnSpanFull(),
                 Forms\Components\TextInput::make('identificacion'),
                 Forms\Components\Select::make('tipo_contacto_id')
                     ->relationship('tipoContacto', 'nombre',
@@ -50,7 +73,7 @@ class ContactosRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('tipo_contacto_id')
+            ->recordTitleAttribute('tipoContacto.nombre')
             ->columns([
                 Tables\Columns\TextColumn::make('tipoContacto.nombre'),
                 Tables\Columns\TextColumn::make('fullname'),

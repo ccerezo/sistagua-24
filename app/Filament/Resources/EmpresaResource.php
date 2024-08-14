@@ -65,6 +65,9 @@ class EmpresaResource extends Resource
 
                         Forms\Components\Toggle::make('active')
                             ->required(),
+                        Forms\Components\Toggle::make('facturar')
+                            ->label('Mismos datos para la factura?')
+                            ->required(),
                     ])->columns(2)
                 ])->columnSpan(2),
                 Group::make()->schema([
@@ -141,6 +144,7 @@ class EmpresaResource extends Resource
         return [
             RelationManagers\DireccionsRelationManager::class,
             RelationManagers\ContactosRelationManager::class,
+            RelationManagers\FacturarsRelationManager::class,
         ];
     }
 

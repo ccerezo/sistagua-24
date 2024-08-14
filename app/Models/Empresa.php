@@ -39,4 +39,9 @@ class Empresa extends Model
     {
         return $this->morphMany(Contacto::class, 'contactoable');
     }
+
+    public function facturars(): MorphMany
+    {
+        return $this->morphMany(Facturar::class, 'facturarable');
+    }
 }

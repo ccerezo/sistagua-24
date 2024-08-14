@@ -35,5 +35,8 @@ php artisan make:filament-resource TipoContacto --generate
 
 php artisan make:model Contacto -m
 php artisan make:filament-relation-manager DomicilioResource contactos apellido1
-
 php artisan make:filament-relation-manager EmpresaResource contactos tipo_contacto_id
+
+php artisan make:model Facturar -m
+php artisan make:filament-relation-manager DomicilioResource facturars nombre
+php artisan make:filament-relation-manager EmpresaResource facturars nombre
