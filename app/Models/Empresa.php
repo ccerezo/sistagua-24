@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class Empresa extends Model
 {
@@ -43,5 +44,15 @@ class Empresa extends Model
     public function facturars(): MorphMany
     {
         return $this->morphMany(Facturar::class, 'facturarable');
+    }
+
+    public function productos(): MorphToMany
+    {
+        return $this->morphToMany(Producto::class, 'productoable')->withPivot(['cantidad'])->withTimestamps();
+    }
+    
+    public function obsequios(): MorphToMany
+    {
+        return $this->morphToMany(Obsequio::class, 'entregadoable')->withPivot(['cantidad','observacion','contacto_id'])->withTimestamps();
     }
 }

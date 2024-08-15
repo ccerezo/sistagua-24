@@ -40,3 +40,14 @@ php artisan make:filament-relation-manager EmpresaResource contactos tipo_contac
 php artisan make:model Facturar -m
 php artisan make:filament-relation-manager DomicilioResource facturars nombre
 php artisan make:filament-relation-manager EmpresaResource facturars nombre
+
+php artisan make:migration create_productoables
+php artisan make:filament-relation-manager DomicilioResource productos nombre
+php artisan make:filament-relation-manager EmpresaResource productos nombre
+
+php artisan make:model Obsequio -m
+php artisan make:filament-resource Obsequio --generate
+
+php artisan make:migration create_entregadoables
+php artisan make:filament-relation-manager DomicilioResource obsequios nombre
+php artisan make:filament-relation-manager EmpresaResource obsequios nombre

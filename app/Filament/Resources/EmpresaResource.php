@@ -145,6 +145,7 @@ class EmpresaResource extends Resource
             RelationManagers\DireccionsRelationManager::class,
             RelationManagers\ContactosRelationManager::class,
             RelationManagers\FacturarsRelationManager::class,
+            RelationManagers\ProductosRelationManager::class,
         ];
     }
 
