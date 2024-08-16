@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class Domicilio extends Model
@@ -19,6 +21,12 @@ class Domicilio extends Model
         'correo' => 'array',
     ];
 
+    public function fullname(): Attribute {
+        return Attribute::make(
+            get: fn ($value, $attributes) => $attributes['apellido1'] . ' ' . $attributes['apellido2']. ' ' . $attributes['nombre1']. ' ' . $attributes['nombre2']
+        );
+    }
+    
     public function categoria() {
         return $this->belongsTo(Categoria::class);
     }
@@ -50,8 +58,14 @@ class Domicilio extends Model
     {
         return $this->morphToMany(Producto::class, 'productoable')->withPivot(['cantidad'])->withTimestamps();
     }
+    
     public function obsequios(): MorphToMany
     {
         return $this->morphToMany(Obsequio::class, 'entregadoable')->withPivot(['cantidad','observacion','contacto_id'])->withTimestamps();
+    }
+
+    public function control(): MorphOne
+    {
+        return $this->morphOne(Control::class, 'controlable');
     }
 }

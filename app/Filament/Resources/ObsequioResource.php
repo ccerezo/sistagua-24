@@ -17,7 +17,7 @@ class ObsequioResource extends Resource
 {
     protected static ?string $model = Obsequio::class;
     protected static ?string $navigationGroup = 'Configuraciones';
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-gift';
 
     public static function form(Form $form): Form
     {

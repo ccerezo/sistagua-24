@@ -51,3 +51,6 @@ php artisan make:filament-resource Obsequio --generate
 php artisan make:migration create_entregadoables
 php artisan make:filament-relation-manager DomicilioResource obsequios nombre
 php artisan make:filament-relation-manager EmpresaResource obsequios nombre
+
+php artisan make:model Control -m
+php artisan make:filament-resource Control --generate
