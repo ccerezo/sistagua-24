@@ -7,12 +7,14 @@ use App\Models\Domicilio;
 use App\Models\Empresa;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Actions\AttachAction;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
 
 class ObsequiosRelationManager extends RelationManager
 {
@@ -25,6 +27,19 @@ class ObsequiosRelationManager extends RelationManager
                 Forms\Components\TextInput::make('nombre')
                     ->required()
                     ->maxLength(255),
+                Forms\Components\TextInput::make('cantidad')->required(),
+                Forms\Components\Select::make('contacto_id')
+                            ->label('Entregado a')
+                            ->options(fn(Get $get): Collection => Contacto::query()
+                                ->where('contactoable_type','=',Domicilio::class)
+                                //->where('id',$get('contacto_id'))
+                                ->get()->pluck('fullname','id'))
+                            ->preload()
+                            ->native(false)
+                            ->live(),
+                            
+                Forms\Components\TextInput::make('observacion'),
+                            
             ]);
     }
 
@@ -36,7 +51,12 @@ class ObsequiosRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('nombre'),
                 Tables\Columns\TextColumn::make('cantidad'),
-                Tables\Columns\TextColumn::make('contacto.fullname'),
+                Tables\Columns\SelectColumn::make('contacto_id')
+                    ->label('Entregado a')
+                    ->options(Contacto::where('contactoable_type','=',Domicilio::class)->get()->pluck('fullname', 'id'))
+                    ->toggleable(isToggledHiddenByDefault: false),
+                Tables\Columns\TextColumn::make('observacion')
+                    ->toggleable(isToggledHiddenByDefault: false),
             ])
             ->filters([
                 //

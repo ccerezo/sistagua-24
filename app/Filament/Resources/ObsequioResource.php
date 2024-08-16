@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class ObsequioResource extends Resource
 {
     protected static ?string $model = Obsequio::class;
-
+    protected static ?string $navigationGroup = 'Configuraciones';
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
