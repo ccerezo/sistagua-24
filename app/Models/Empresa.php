@@ -58,6 +58,6 @@ class Empresa extends Model
     }
     public function control(): MorphOne
     {
-        return $this->morphOne(Control::class, 'controlable');
+        return $this->MorphOne(Control::class, 'controlable');
     }
 }

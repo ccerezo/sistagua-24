@@ -10,7 +10,8 @@ class Control extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['tds','ppm','fecha_compra','ultimo_mantenimiento'];
+    //protected $fillable = ['tds','ppm','fecha_compra','ultimo_mantenimiento'];
+    protected $guarded = [];
 
     public function controlable(): MorphTo
     {

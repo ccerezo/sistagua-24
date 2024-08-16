@@ -54,3 +54,6 @@ php artisan make:filament-relation-manager EmpresaResource obsequios nombre
 
 php artisan make:model Control -m
 php artisan make:filament-resource Control --generate
+
+php artisan make:model Autoriza -m
+php artisan make:model Mantenimiento -m

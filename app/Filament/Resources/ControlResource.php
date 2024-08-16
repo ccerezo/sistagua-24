@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ControlResource extends Resource
@@ -27,6 +28,17 @@ class ControlResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\MorphToSelect::make('controlable')
+                    ->types([
+                        Forms\Components\MorphToSelect\Type::make(Domicilio::class)
+                            ->getOptionLabelFromRecordUsing(fn (Domicilio $record): string => "{$record->apellido1} {$record->apellido1} {$record->nombre1} {$record->nombre2}"),
+                        Forms\Components\MorphToSelect\Type::make(Empresa::class)
+                            ->titleAttribute('nombre')
+                    ])
+                    ->searchable()
+                    ->preload()
+                    ->columnSpan(3),
+
                 Forms\Components\TextInput::make('tds')
                     ->required()
                     ->numeric(),
@@ -34,19 +46,23 @@ class ControlResource extends Resource
                     ->required()
                     ->numeric(),
                 Forms\Components\DatePicker::make('fecha_compra')
-                    ->required(),
-                Forms\Components\TextInput::make('controlable_type')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('controlable_id')
-                    ->required()
-                    ->numeric(),
-            ]);
+                    
+                
+                // Forms\Components\TextInput::make('controlable_type')
+                //     ->required()
+                //     ->maxLength(255),
+                // Forms\Components\TextInput::make('controlable_id')
+                //     ->required()
+                //     ->numeric(),
+            ])->columns(3);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            // ->groups([
+            //     'controlable_type',
+            // ])
             ->columns([
                 Tables\Columns\TextColumn::make('tds')
                     ->numeric()
@@ -56,14 +72,32 @@ class ControlResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('fecha_compra')
                     ->date()
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
+                // Tables\Columns\TextColumn::make('contacto')
+                //     ->badge()
+                //     ->state(function (Control $record): string {
+                //         if($record->controlable_type == Domicilio::class){
+                //             $domicilio = Domicilio::find($record->controlable_id);
+                //             foreach ($domicilio->contactos as $contacto) {
+                //                 return $contacto->nombre1;
+                //             }
+                //             //return $domicilio->contactos;
+                //         }
+                //         return false;
+                //     }),
                 Tables\Columns\TextColumn::make('ultimo_mantenimiento')
+                    ->label('Último Mant.')
                     ->dateTime()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('controlable.identificacion')
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('controlable.codigo')
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('controlable_type')
-                    ->label('Tipo cliente')
+                    ->label('Tipo')
                     ->badge()
                     ->state(function (Control $record): string {
                         if($record->controlable_type == Domicilio::class){
@@ -92,7 +126,19 @@ class ControlResource extends Resource
                             return $empresa->nombre;
                         }
                         return '';
-                    }),
+                    })
+                    ->searchable(),
+                    // ->description(function (Control $record): string {
+                    //     if($record->controlable_type == Domicilio::class){
+                    //         $domicilio = Domicilio::find($record->controlable_id);
+                    //         $parentescos = '';
+                    //         foreach ($domicilio->contactos as $contacto) {
+                    //             $parentescos.=$contacto->fullname."-";
+                    //         }
+                    //         return $parentescos;
+                    //     }
+                    //     return false;
+                    // }),
                     
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -109,63 +155,8 @@ class ControlResource extends Resource
                         Domicilio::class => 'Domicilio',
                         Empresa::class => 'Empresa',
                     ]),
-                Tables\Filters\Filter::make('controlable_id'),
             ])
-            ->headerActions([
-                
-                Tables\Actions\Action::make('Domicilio')
-                    ->form([
-                        Forms\Components\TextInput::make('tds')
-                            ->required()
-                            ->numeric(),
-                        Forms\Components\TextInput::make('ppm')
-                            ->required()
-                            ->numeric(),
-                        Forms\Components\DatePicker::make('fecha_compra')
-                            ->required(),
-                        Forms\Components\Select::make('controlable_id')
-                            ->label('Cliente Domicilio')
-                            ->preload()
-                            ->searchable()
-                            ->options(Domicilio::all()->pluck('fullname', 'id'))
-                        
-                    ])
-                    ->action(function (array $data) {
-                        $domicilio = Domicilio::find($data['controlable_id']);
-                        $domicilio->control()->create([
-                                'tds' => $data['tds'],
-                                'ppm' => $data['ppm'],
-                                'fecha_compra' => $data['fecha_compra'],
-                            ]);
-                    }),
-
-                Tables\Actions\Action::make('Empresa')
-                    ->color('success')
-                    ->form([
-                        Forms\Components\TextInput::make('tds')
-                            ->required()
-                            ->numeric(),
-                        Forms\Components\TextInput::make('ppm')
-                            ->required()
-                            ->numeric(),
-                        Forms\Components\DatePicker::make('fecha_compra')
-                            ->required(),
-                        Forms\Components\Select::make('controlable_id')
-                            ->label('Cliente Empresarial')
-                            ->preload()
-                            ->searchable()
-                            ->options(Empresa::all()->pluck('nombre', 'id'))
-                        
-                    ])
-                    ->action(function (array $data) {
-                        $empresa = Empresa::find($data['controlable_id']);
-                        $empresa->control()->create([
-                                'tds' => $data['tds'],
-                                'ppm' => $data['ppm'],
-                                'fecha_compra' => $data['fecha_compra'],
-                            ]);
-                    })
-            ])
+            
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
