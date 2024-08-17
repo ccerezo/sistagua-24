@@ -57,3 +57,6 @@ php artisan make:filament-resource Control --generate
 
 php artisan make:model Autoriza -m
 php artisan make:model Mantenimiento -m
+php artisan make:filament-relation-manager ControlResource mantenimientos numero
+
+php artisan make:model ProductosUsado -m

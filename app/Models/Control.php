@@ -17,4 +17,8 @@ class Control extends Model
     {
         return $this->morphTo();
     }
+
+    public function mantenimientos() {
+        return $this->hasMany(Mantenimiento::class);
+    }
 }

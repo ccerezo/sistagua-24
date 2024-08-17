@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('autorizas', function (Blueprint $table) {
+        Schema::create('productos_usados', function (Blueprint $table) {
             $table->id();
-            $table->string('identificacion',20)->nullable();
-            $table->string('apellido1',50);
-            $table->string('apellido2',50)->nullable();
-            $table->string('nombre1',50);
-            $table->string('nombre2',50)->nullable();
-            $table->longText('firma')->nullable();
+            $table->integer('cantidad')->default(1);
+            $table->string('descripcion')->nullable();
+            $table->foreignId('producto_id')->constrained('productos')->cascadeOnDelete();
             $table->timestamps();
         });
     }
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('autorizas');
+        Schema::dropIfExists('productos_usados');
     }
 };

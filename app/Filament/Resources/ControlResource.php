@@ -171,7 +171,7 @@ class ControlResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\MantenimientosRelationManager::class,
         ];
     }
 

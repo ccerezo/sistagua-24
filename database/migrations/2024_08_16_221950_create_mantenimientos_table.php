@@ -17,12 +17,14 @@ return new class extends Migration
             $table->enum('tipo_doc', ['Factura','Recibo'])->default('Factura');
             $table->string('numero')->nullable();
             $table->string('numero_ficha')->nullable();
-            $table->timestamp('fehca')->nullable();
+            $table->timestamp('fecha')->nullable();
             $table->string('descripcion')->nullable();
             $table->integer('tds')->nullable();
             $table->integer('ppm')->nullable();
-            $table->integer('firma')->nullable();
+            $table->longText('firma')->nullable();
             $table->foreignId('autoriza_id')->nullable()->constrained('autorizas')->nullOnDelete();
+            $table->boolean('notificado')->default(false);
+            $table->integer('persona_matenimiento_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }
