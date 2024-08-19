@@ -22,4 +22,8 @@ class Mantenimiento extends Model
     public function control() {
         return $this->belongsTo(Control::class);
     }
+
+    public function productoUsados() {
+        return $this->hasMany(ProductosUsado::class);
+    }
 }

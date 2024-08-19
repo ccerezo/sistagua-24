@@ -25,5 +25,9 @@ class Producto extends Model
     {
         return $this->morphedByMany(Empresa::class, 'productoable')->withPivot(['cantidad'])->withTimestamps();
     }
+
+    public function productoUsados() {
+        return $this->hasMany(ProductosUsado::class);
+    }
     
 }

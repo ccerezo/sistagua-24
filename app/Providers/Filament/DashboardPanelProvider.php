@@ -51,6 +51,8 @@ class DashboardPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->databaseNotifications()
+            ->plugin(\RickDBCN\FilamentEmail\FilamentEmail::make())
             ->authMiddleware([
                 Authenticate::class,
             ]);

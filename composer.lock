@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a6aa4c870d1ca913af946c384274d89b",
+    "content-hash": "e31985750bf2d8b88de34d3ae2204b96",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -5258,6 +5258,78 @@
                 }
             ],
             "time": "2024-04-27T21:32:50+00:00"
+        },
+        {
+            "name": "rickdbcn/filament-email",
+            "version": "v1.5.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/RickDBCN/filament-email.git",
+                "reference": "fbb0561b881f99c77a4873e12d514c4fd2059d54"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/RickDBCN/filament-email/zipball/fbb0561b881f99c77a4873e12d514c4fd2059d54",
+                "reference": "fbb0561b881f99c77a4873e12d514c4fd2059d54",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^3.0",
+                "illuminate/contracts": "^10.0|^11.0",
+                "laravel/framework": "^10.0|^11.0",
+                "php": "^8.1",
+                "spatie/laravel-package-tools": "^1.14.0"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^7.9|^8.0",
+                "orchestra/testbench": "^8.0|^9.0",
+                "pestphp/pest": "^2.0",
+                "pestphp/pest-plugin-arch": "^2.0",
+                "pestphp/pest-plugin-laravel": "^2.0",
+                "pestphp/pest-plugin-livewire": "^2.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "RickDBCN\\FilamentEmail\\FilamentEmailServiceProvider"
+                    ],
+                    "aliases": {
+                        "FilamentEmail": "RickDBCN\\FilamentEmail\\Facades\\FilamentEmail"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "RickDBCN\\FilamentEmail\\": "src/",
+                    "RickDBCN\\FilamentEmail\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Rick de Boer",
+                    "email": "rickdb@calvintijd.nl",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Log all outbound emails you send through your Filament application",
+            "homepage": "https://github.com/rickdbcn/filament-email",
+            "keywords": [
+                "RickDBCN",
+                "filament-email",
+                "laravel",
+                "marcogermani87"
+            ],
+            "support": {
+                "issues": "https://github.com/RickDBCN/filament-email/issues",
+                "source": "https://github.com/RickDBCN/filament-email/tree/v1.5.1"
+            },
+            "time": "2024-07-26T23:59:26+00:00"
         },
         {
             "name": "ryangjchandler/blade-capture-directive",
