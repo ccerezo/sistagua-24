@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\DomicilioResource\RelationManagers;
 
 use App\Models\Provincia;
+use Cheesegrits\FilamentGoogleMaps\Fields\Map;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -56,7 +57,8 @@ class DireccionsRelationManager extends RelationManager
                 Forms\Components\TextInput::make('referencia')
                     ->maxLength(255),
                 Forms\Components\TagsInput::make('telefono'),
-                Forms\Components\Toggle::make('equipos_instalados')
+                Forms\Components\Toggle::make('equipos_instalados'),
+                Map::make('ubicacion'),
             ])->columns(3);
 
     }
