@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ControlResource\RelationManagers;
 
 use App\Mail\Mantenimiento as MailMantenimiento;
+use App\Models\Contacto;
 use App\Models\Control;
 use App\Models\Domicilio;
 use App\Models\Empresa;
@@ -191,22 +192,41 @@ class MantenimientosRelationManager extends RelationManager
                     }),
 
                 Tables\Actions\Action::make('Enviar Correo')
-                    
-                    ->action(function (Mantenimiento $record): void {
+                    ->fillForm(function (Mantenimiento $record): array {
                         
                         $control = Control::find($record->control_id);
-
+                        $enviar_a = array();
                         if($control->controlable_type == Domicilio::class){
                             $domicilio = Domicilio::find($control->controlable_id);
-                            // $correo = new MailMantenimiento($this->hojaDetalleDomicilio);
-                            // //$para = $this->hojaDetalleDomicilio->hojaControlDomicilio->clienteDomicilio->correo1;
-                            // //Mail::to('ccerezo90@gmail.com')->send($correo);
-                            // Mail::to($enviar_a)->send($correo);
+                            if($domicilio->correo)
+                                array_push($enviar_a, $domicilio->correo);
+                            foreach ($domicilio->contactos as $contacto) {
+                                if($contacto->correo)
+                                    array_push($enviar_a, $contacto->correo);
+                            }
+                            $data['correos'] = array_merge(...$enviar_a);
+                            
                         }
                         if($control->controlable_type == Empresa::class){
-                            //
+                            $empresa = Empresa::find($control->controlable_id);
+                            if($empresa->correo)
+                                array_push($enviar_a, $empresa->correo);
+                            foreach ($empresa->contactos as $contacto) {
+                                if($contacto->correo)
+                                    array_push($enviar_a, $contacto->correo);
+                            }
+                            $data['correos'] = array_merge(...$enviar_a);
                         }
                         
+                        return $data;
+                    })
+                    ->form([
+                        Forms\Components\TagsInput::make('correos')
+                    ])
+                    ->action(function (array $data, Mantenimiento $record): void {
+                        $body = new MailMantenimiento($record);
+                        Mail::to($data['correos'])->send($body);
+                                                
                         $recipient = Auth::user();
                         Notification::make()
                             ->title('Correo de Mantenimiento Enviado')
