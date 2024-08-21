@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Observers\MantenimientoObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+#[ObservedBy([MantenimientoObserver::class])]
 class Mantenimiento extends Model
 {
     use HasFactory;

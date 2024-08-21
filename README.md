@@ -62,3 +62,4 @@ php artisan make:filament-relation-manager ControlResource mantenimientos numero
 php artisan make:model ProductosUsado -m
 
 php artisan make:mail Mantenimiento
+php artisan make:observer MantenimientoObserver --model=Mantenimiento
