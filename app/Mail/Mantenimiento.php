@@ -12,13 +12,15 @@ use Illuminate\Queue\SerializesModels;
 class Mantenimiento extends Mailable
 {
     use Queueable, SerializesModels;
-    public $data;
+    public $control;
+    public $domicilio;
     /**
      * Create a new message instance.
      */
-    public function __construct($data)
+    public function __construct($control, $domicilio)
     {
-        $this->data = $data;
+        $this->control = $control;
+        $this->domicilio = $domicilio;
     }
 
     /**

@@ -13,6 +13,8 @@ use Filament\Forms;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
@@ -185,6 +187,7 @@ class MantenimientosRelationManager extends RelationManager
                         ]),
                     ])
                     ->action(function (array $data): void {
+                        
                         $recipient = Auth::user();
                         Notification::make()
                             ->title('Productos usados en la ficha técnica.')
@@ -207,16 +210,19 @@ class MantenimientosRelationManager extends RelationManager
                                     array_push($data['dataCorreos'], 
                                     ['nombreCompleto' => $contacto->fullname, 'tipoContacto' => $contacto->tipoContacto->nombre, 'correo' =>$contacto->correo]);
                             }
-                            
-                            
+                                                        
                         }
                         if($control->controlable_type == Empresa::class){
                             $empresa = Empresa::find($control->controlable_id);
-                            if($empresa->correo)
-                                array_push($enviar_a, $empresa->correo);
+                            if($empresa->correo) {
+                                array_push($data['dataCorreos'], 
+                                    ['nombreCompleto' => $empresa->nombre, 'tipoContacto' => 'Empresa', 'correo' =>$empresa->correo]);
+                            }
+                                
                             foreach ($empresa->contactos as $contacto) {
                                 if($contacto->correo)
-                                    array_push($enviar_a, $contacto->correo);
+                                    array_push($data['dataCorreos'], 
+                                        ['nombreCompleto' => $contacto->fullname, 'tipoContacto' => $contacto->tipoContacto->nombre, 'correo' =>$contacto->correo]);
                             }
                         }
                         
@@ -236,13 +242,86 @@ class MantenimientosRelationManager extends RelationManager
                         $record->notificado = true;
                         $record->save();
                         Notification::make()
-                            ->title('Notificación enviada')
+                            ->title('Notificación enviada por correo.')
                             ->success()
                             ->send();
-                        //$body = new MailMantenimiento($record);
-                        //Mail::to($data['correos'])->send($body);
                                                 
                     }),
+                Tables\Actions\Action::make('Ficha técnica')
+                    ->fillForm(function (Mantenimiento $record): array {
+                            
+                        $control = Control::find($record->control_id);
+                        $data['numero'] = $record->numero_ficha;
+                        $data['fecha'] = $record->fecha;
+                        $data['tds'] = $record->tds;
+                        $data['productoUsados'] = [];
+                        foreach ($record->productoUsados as $item) {
+                            array_push($data['productoUsados'], ['producto_id' => $item->producto_id,
+                                                                'cantidad' => $item->cantidad]);
+                        }
+                        
+                        if($control->controlable_type == Domicilio::class){
+                            $domicilio = Domicilio::find($control->controlable_id);
+                            $data['cliente'] = $domicilio->fullname.' - '.$domicilio->codigo;
+                                                                                    
+                        }
+                        if($control->controlable_type == Empresa::class){
+                            $empresa = Empresa::find($control->controlable_id);
+                            $data['cliente'] = $empresa->nombre.' - '.$empresa->codigo;
+                        }
+                        //dd($data);
+                        return $data;
+                    })
+                    ->form([
+                        Forms\Components\Fieldset::make('FICHA TÉCNICA CONTROL DE EQUIPO ÓSMOSIS INVERSA Y FILTROS')
+                            
+                            ->schema([
+                                Forms\Components\TextInput::make('numero'),
+                                Forms\Components\TextInput::make('cliente')->columnSpan(3),
+                                Forms\Components\TextInput::make('fecha')->columnSpan(2),
+                            ])->columns(6),
+
+                        Forms\Components\Section::make('MEDICIÓN DE CALIDAD DE AGUA')
+                            ->description('CON TDS Y ANALIZADOR DE DUREZA ANTES DEL INGRESO AL ÓSMOSIS INVERSA O FILTROS')
+                            ->schema([
+                                Forms\Components\Select::make('Detalle')
+                                    ->options([
+                                        'BUENO' => 'BUENO',
+                                        'NORMAL' => 'NORMAL',
+                                        'MALO' => 'MALO',
+                                    ]),
+                                Forms\Components\TextInput::make('tds'),
+                                Forms\Components\TextInput::make('Dureza/Color'),
+                                Forms\Components\TextInput::make('recomendacion')->columnSpan(3)
+                            ])->columns(6),
+                        Forms\Components\Section::make('MEDICIÓN DE CALIDAD DE AGUA')
+                            ->description('CON TDS, PURIFICADA A TRAVÉS DE ÓSMOSIS INVERSA')
+                            ->schema([
+                                Forms\Components\Select::make('Detalle')
+                                    ->options([
+                                        'BUENO' => 'BUENO',
+                                        'NORMAL' => 'NORMAL',
+                                        'MALO' => 'MALO',
+                                    ]),
+                                Forms\Components\TextInput::make('ppm'),
+                                Forms\Components\TextInput::make('recomendacion')->columnSpan(3)
+                            ])->columns(5),
+                        Forms\Components\Section::make('MANTENIMIENTO PREVENTIVO Y CORRECTIVO DE ACCESORIOS DEL ÓSMOSIS INVERSA Y FILTROS')
+                            ->schema([
+                                Forms\Components\Repeater::make('productoUsados')
+                                    ->relationship('productoUsados')
+                                    ->schema([
+                                        Forms\Components\Select::make('producto_id')
+                                            ->relationship('producto', 'nombre')->disabled()->columnSpan(3),
+                                        Forms\Components\TextInput::make('cantidad'),
+                                        ])
+                                    ->addable(false)
+                                    ->deletable(false)
+                                    ->reorderable(false)
+                                    ->columns(4)
+                            ])
+                ]),
+                    
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
