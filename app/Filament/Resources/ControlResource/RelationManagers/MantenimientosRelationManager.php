@@ -312,15 +312,22 @@ class MantenimientosRelationManager extends RelationManager
                                     ->relationship('productoUsados')
                                     ->schema([
                                         Forms\Components\Select::make('producto_id')
-                                            ->relationship('producto', 'nombre')->disabled()->columnSpan(3),
-                                        Forms\Components\TextInput::make('cantidad'),
+                                            ->relationship('producto', 'nombre')->disabled()->columnSpan(4),
+                                        Forms\Components\TextInput::make('cantidad')
+                                            ->label('Cant.'),
                                         ])
                                     ->addable(false)
                                     ->deletable(false)
                                     ->reorderable(false)
-                                    ->columns(4)
-                            ])
-                ]),
+                                    ->columns(5)
+                                    ]),
+                        Forms\Components\Section::make([        
+                        Forms\Components\TextInput::make('Total')
+                            ->numeric()
+                            ->prefix('$')->columnStart(4),
+                        ])->columns(4),
+                    ]),
+                                           
                     
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
