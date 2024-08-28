@@ -63,3 +63,5 @@ php artisan make:model ProductosUsado -m
 
 php artisan make:mail Mantenimiento
 php artisan make:observer MantenimientoObserver --model=Mantenimiento
+
+php artisan make:model FichaTecnica -m

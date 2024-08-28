@@ -29,4 +29,8 @@ class Mantenimiento extends Model
     public function productoUsados() {
         return $this->hasMany(ProductosUsado::class);
     }
+
+    public function fichaTecnicas() {
+        return $this->hasMany(FichaTecnica::class);
+    }
 }

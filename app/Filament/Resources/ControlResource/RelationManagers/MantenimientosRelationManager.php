@@ -7,6 +7,7 @@ use App\Models\Contacto;
 use App\Models\Control;
 use App\Models\Domicilio;
 use App\Models\Empresa;
+use App\Models\FichaTecnica;
 use App\Models\Mantenimiento;
 use App\Models\ProductosUsado;
 use Filament\Forms;
@@ -254,6 +255,7 @@ class MantenimientosRelationManager extends RelationManager
                         $data['numero'] = $record->numero_ficha;
                         $data['fecha'] = $record->fecha;
                         $data['tds'] = $record->tds;
+                        //$data['firma'] = $record->firma;
                         $data['productoUsados'] = [];
                         foreach ($record->productoUsados as $item) {
                             array_push($data['productoUsados'], ['producto_id' => $item->producto_id,
@@ -284,7 +286,7 @@ class MantenimientosRelationManager extends RelationManager
                         Forms\Components\Section::make('MEDICIÓN DE CALIDAD DE AGUA')
                             ->description('CON TDS Y ANALIZADOR DE DUREZA ANTES DEL INGRESO AL ÓSMOSIS INVERSA O FILTROS')
                             ->schema([
-                                Forms\Components\Select::make('Detalle')
+                                Forms\Components\Select::make('detalle_tds')
                                     ->options([
                                         'BUENO' => 'BUENO',
                                         'NORMAL' => 'NORMAL',
@@ -297,7 +299,7 @@ class MantenimientosRelationManager extends RelationManager
                         Forms\Components\Section::make('MEDICIÓN DE CALIDAD DE AGUA')
                             ->description('CON TDS, PURIFICADA A TRAVÉS DE ÓSMOSIS INVERSA')
                             ->schema([
-                                Forms\Components\Select::make('Detalle')
+                                Forms\Components\Select::make('detalle_ppm')
                                     ->options([
                                         'BUENO' => 'BUENO',
                                         'NORMAL' => 'NORMAL',
@@ -324,9 +326,34 @@ class MantenimientosRelationManager extends RelationManager
                         Forms\Components\Section::make([        
                         Forms\Components\TextInput::make('Total')
                             ->numeric()
+                            ->required()
+                            ->default(0)
                             ->prefix('$')->columnStart(4),
-                        ])->columns(4),
-                    ]),
+                        Forms\Components\Section::make('Observación por personal autorizado de SISTAGUA:')
+                            ->schema([
+                                Forms\Components\Textarea::make('recomendacion_sistagua')                                
+                                ]),
+                        SignaturePad::make('firma')
+                            ->clearable(false)
+                            ->undoable(false)
+                            ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
+                            ->backgroundColorOnDark('#f0a')     // Background color on dark mode (defaults to backgroundColor)
+                            ->penColor('#00f')                  // Pen color on light mode
+                            ->penColorOnDark('#fff')            // Pen color on dark mode (defaults to penColor)
+                            ->hidden(fn (Get $get): bool => ! $get('firma'))
+                            ->columnSpanFull()
+                        ])->columns(4)
+                        
+                    ])
+                    ->action(function (array $data): void {
+                        // $ficha = new FichaTecnica();
+                        // $ficha->
+                        
+                        $recipient = Auth::user();
+                        Notification::make()
+                            ->title('Ficha técnica creada correctamemte.')
+                            ->sendToDatabase($recipient);
+                    }),
                                            
                     
                 Tables\Actions\EditAction::make(),
