@@ -30,7 +30,7 @@ class Mantenimiento extends Model
         return $this->hasMany(ProductosUsado::class);
     }
 
-    public function fichaTecnicas() {
-        return $this->hasMany(FichaTecnica::class);
+    public function fichaTecnica() {
+        return $this->hasOne(FichaTecnica::class);
     }
 }

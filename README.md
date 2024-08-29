@@ -65,3 +65,5 @@ php artisan make:mail Mantenimiento
 php artisan make:observer MantenimientoObserver --model=Mantenimiento
 
 php artisan make:model FichaTecnica -m
+
+php artisan make:controller PDFController

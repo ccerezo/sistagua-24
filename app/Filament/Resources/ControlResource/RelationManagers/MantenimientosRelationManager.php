@@ -11,6 +11,7 @@ use App\Models\FichaTecnica;
 use App\Models\Mantenimiento;
 use App\Models\ProductosUsado;
 use Filament\Forms;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -112,6 +113,8 @@ class MantenimientosRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('numero'),
                 Tables\Columns\TextColumn::make('tds'),
                 Tables\Columns\TextColumn::make('ppm'),
+                Tables\Columns\IconColumn::make('notificado')
+                    ->boolean(),
                 Tables\Columns\TextColumn::make('descripcion')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('autoriza.fullname')
@@ -249,19 +252,24 @@ class MantenimientosRelationManager extends RelationManager
                                                 
                     }),
                 Tables\Actions\Action::make('Ficha técnica')
-                    ->fillForm(function (Mantenimiento $record): array {
-                            
-                        $control = Control::find($record->control_id);
+                    ->fillForm(function (array $data, Mantenimiento $record): array {
+                        $ficha = $record->fichaTecnica;
+                        if($ficha) {
+                            $data = $ficha->toArray();
+                        }
                         $data['numero'] = $record->numero_ficha;
                         $data['fecha'] = $record->fecha;
                         $data['tds'] = $record->tds;
-                        //$data['firma'] = $record->firma;
+                        $data['ppm'] = $record->ppm;
+                        $data['firma'] = $record->firma;    
                         $data['productoUsados'] = [];
+                                                
+                       
                         foreach ($record->productoUsados as $item) {
                             array_push($data['productoUsados'], ['producto_id' => $item->producto_id,
                                                                 'cantidad' => $item->cantidad]);
                         }
-                        
+                        $control = Control::find($record->control_id);
                         if($control->controlable_type == Domicilio::class){
                             $domicilio = Domicilio::find($control->controlable_id);
                             $data['cliente'] = $domicilio->fullname.' - '.$domicilio->codigo;
@@ -271,6 +279,8 @@ class MantenimientosRelationManager extends RelationManager
                             $empresa = Empresa::find($control->controlable_id);
                             $data['cliente'] = $empresa->nombre.' - '.$empresa->codigo;
                         }
+                        
+                        //$data = array_merge($data, $data_tmp);
                         //dd($data);
                         return $data;
                     })
@@ -293,8 +303,8 @@ class MantenimientosRelationManager extends RelationManager
                                         'MALO' => 'MALO',
                                     ]),
                                 Forms\Components\TextInput::make('tds'),
-                                Forms\Components\TextInput::make('Dureza/Color'),
-                                Forms\Components\TextInput::make('recomendacion')->columnSpan(3)
+                                Forms\Components\TextInput::make('dureza_color_tds'),
+                                Forms\Components\TextInput::make('recomendacion_tds')->columnSpan(3)
                             ])->columns(6),
                         Forms\Components\Section::make('MEDICIÓN DE CALIDAD DE AGUA')
                             ->description('CON TDS, PURIFICADA A TRAVÉS DE ÓSMOSIS INVERSA')
@@ -306,7 +316,7 @@ class MantenimientosRelationManager extends RelationManager
                                         'MALO' => 'MALO',
                                     ]),
                                 Forms\Components\TextInput::make('ppm'),
-                                Forms\Components\TextInput::make('recomendacion')->columnSpan(3)
+                                Forms\Components\TextInput::make('recomendacion_ppm')->columnSpan(3)
                             ])->columns(5),
                         Forms\Components\Section::make('MANTENIMIENTO PREVENTIVO Y CORRECTIVO DE ACCESORIOS DEL ÓSMOSIS INVERSA Y FILTROS')
                             ->schema([
@@ -324,7 +334,7 @@ class MantenimientosRelationManager extends RelationManager
                                     ->columns(5)
                                     ]),
                         Forms\Components\Section::make([        
-                        Forms\Components\TextInput::make('Total')
+                        Forms\Components\TextInput::make('total')
                             ->numeric()
                             ->required()
                             ->default(0)
@@ -345,10 +355,31 @@ class MantenimientosRelationManager extends RelationManager
                         ])->columns(4)
                         
                     ])
-                    ->action(function (array $data): void {
-                        // $ficha = new FichaTecnica();
-                        // $ficha->
+                    // ->registerModalActions([
+                    //     Action::make('Imprimir')
+                    //         ->url(fn (): string => route('posts.edit', ['post' => $this->post]))
+                    // ])
+                    ->extraModalFooterActions([
+                        Action::make('Imprimir')
+                            ->url(fn (Mantenimiento $record): string => route('pdf.ficha', ['mantenimiento' => $record]))
+                    ])
+                    ->action(function (array $data,Mantenimiento $record): void {
+                        $ficha = $record->fichaTecnica;
+                        if(!$ficha) {
+                            $ficha = new FichaTecnica(); 
+                        }
+                        //dd($data);
                         
+                        $ficha->numero = $data['numero'];
+                        $ficha->detalle_tds = $data['detalle_tds'];
+                        $ficha->dureza_color_tds = $data['dureza_color_tds'];
+                        $ficha->recomendacion_tds = $data['recomendacion_tds'];
+                        $ficha->detalle_ppm = $data['detalle_ppm'];
+                        $ficha->recomendacion_ppm = $data['recomendacion_ppm'];
+                        $ficha->total = $data['total'];
+                        $ficha->recomendacion_sistagua = $data['recomendacion_sistagua'];
+                        $ficha->mantenimiento_id = $record->id;
+                        $ficha->save();
                         $recipient = Auth::user();
                         Notification::make()
                             ->title('Ficha técnica creada correctamemte.')
