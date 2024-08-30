@@ -57,8 +57,15 @@ class DireccionsRelationManager extends RelationManager
                 Forms\Components\TextInput::make('referencia')
                     ->maxLength(255),
                 Forms\Components\TagsInput::make('telefono'),
+                Forms\Components\TextInput::make('latitud')
+                    ->maxLength(255),
+                    Forms\Components\TextInput::make('longitud')
+                    ->maxLength(255),
                 Forms\Components\Toggle::make('equipos_instalados'),
-                Map::make('ubicacion'),
+                Map::make('ubicacion')
+                    ->defaultLocation([-1.343508, -89.1917466]) // default for new forms
+                    ->geolocate() // adds a button to request device location and set map marker accordingly
+                    ->columnSpanFull(),
             ])->columns(3);
 
     }

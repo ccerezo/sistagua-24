@@ -15,6 +15,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
@@ -27,6 +28,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Saade\FilamentAutograph\Forms\Components\SignaturePad;
+use stdClass;
 
 class MantenimientosRelationManager extends RelationManager
 {
@@ -54,7 +56,14 @@ class MantenimientosRelationManager extends RelationManager
                         ->required()
                         ->maxLength(255),
                     Forms\Components\TextInput::make('numero_ficha')
-                        ->required(),
+                        ->required()
+                        ->numeric()
+                        ->live()
+                        ->afterStateHydrated(function (Set $set) {
+                            $ficha = FichaTecnica::latest()->first();
+                            if($ficha)
+                                $set('numero_ficha', ($ficha->numero)+1);
+                        }),
                 ])->columns(3)->columnSpan(2),
                 Group::make()->schema([
                 
@@ -77,7 +86,7 @@ class MantenimientosRelationManager extends RelationManager
                         name: 'autoriza',
                         modifyQueryUsing: fn (Builder $query) => $query->orderBy('apellido1')->orderBy('nombre1'),
                     )
-                    ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->apellido1} {$record->apellido2} {$record->nombre1} {$record->nombre2}")
+                    ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->identificacion} - {$record->apellido1} {$record->apellido2} {$record->nombre1} {$record->nombre2}")
                     ->searchable(['apellido1', 'nombre1', 'nombre2'])
                     ->createOptionForm([
                         Group::make()->schema([
@@ -109,6 +118,9 @@ class MantenimientosRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('numero')
             ->columns([
+                Tables\Columns\TextColumn::make('N°')
+                    ->badge()
+                    ->getStateUsing(fn (stdClass $rowLoop): string => $rowLoop->remaining+1),
                 Tables\Columns\TextColumn::make('tipo_doc'),
                 Tables\Columns\TextColumn::make('numero'),
                 Tables\Columns\TextColumn::make('tds'),
@@ -123,6 +135,7 @@ class MantenimientosRelationManager extends RelationManager
                     ->label('Realizado')
                     ->description(fn (Mantenimiento $record): string => $record->user->name),
             ])
+            ->defaultSort('id', 'desc')
             ->filters([
                 //
             ])
@@ -181,6 +194,7 @@ class MantenimientosRelationManager extends RelationManager
                                 Forms\Components\Select::make('producto_id')
                                     ->relationship('producto', 'nombre')
                                     ->searchable()
+                                    ->preload()
                                     ->required(),
                                 Forms\Components\TextInput::make('cantidad')
                                     ->required()
@@ -245,6 +259,34 @@ class MantenimientosRelationManager extends RelationManager
                     ->action(function (array $data, Mantenimiento $record): void {
                         $record->notificado = true;
                         $record->save();
+                        $control = Control::find($record->control_id);
+                        $enviar_a = array();
+                        if($control->controlable_type == Domicilio::class){
+                            $domicilio = Domicilio::find($control->controlable_id);
+                            if($domicilio->correo) array_push($enviar_a, $domicilio->correo);
+                            foreach ($domicilio->contactos as $contacto) {
+                                if($contacto->correo) array_push($enviar_a, $contacto->correo);
+                                $body = new MailMantenimiento($control, $domicilio);
+                            }
+                            $data['correos'] = array_merge(...$enviar_a);
+                        }
+                        if($control->controlable_type == Empresa::class){
+                            $empresa = Empresa::find($control->controlable_id);
+                            if($empresa->correo) array_push($enviar_a, $empresa->correo);
+                            foreach ($empresa->contactos as $contacto) {
+                                if($contacto->correo) array_push($enviar_a, $contacto->correo);
+                                $body = new MailMantenimiento($control, $empresa);
+                            }
+                            $data['correos'] = array_merge(...$enviar_a);
+                        }
+                                                
+                        Mail::to($data['correos'])->send($body);
+
+                        $recipient = Auth::user();
+                        Notification::make()
+                            ->title('Correo Enviado!.')
+                            ->body('Mantenimiento realizado: '. $record->fecha)
+                            ->sendToDatabase($recipient);
                         Notification::make()
                             ->title('Notificación enviada por correo.')
                             ->success()
@@ -288,7 +330,7 @@ class MantenimientosRelationManager extends RelationManager
                         Forms\Components\Fieldset::make('FICHA TÉCNICA CONTROL DE EQUIPO ÓSMOSIS INVERSA Y FILTROS')
                             
                             ->schema([
-                                Forms\Components\TextInput::make('numero'),
+                                Forms\Components\TextInput::make('numero')->disabled(),
                                 Forms\Components\TextInput::make('cliente')->columnSpan(3),
                                 Forms\Components\TextInput::make('fecha')->columnSpan(2),
                             ])->columns(6),
@@ -297,6 +339,7 @@ class MantenimientosRelationManager extends RelationManager
                             ->description('CON TDS Y ANALIZADOR DE DUREZA ANTES DEL INGRESO AL ÓSMOSIS INVERSA O FILTROS')
                             ->schema([
                                 Forms\Components\Select::make('detalle_tds')
+                                    ->required()
                                     ->options([
                                         'BUENO' => 'BUENO',
                                         'NORMAL' => 'NORMAL',
@@ -310,6 +353,7 @@ class MantenimientosRelationManager extends RelationManager
                             ->description('CON TDS, PURIFICADA A TRAVÉS DE ÓSMOSIS INVERSA')
                             ->schema([
                                 Forms\Components\Select::make('detalle_ppm')
+                                    ->required()
                                     ->options([
                                         'BUENO' => 'BUENO',
                                         'NORMAL' => 'NORMAL',
@@ -355,14 +399,16 @@ class MantenimientosRelationManager extends RelationManager
                         ])->columns(4)
                         
                     ])
-                    // ->registerModalActions([
-                    //     Action::make('Imprimir')
-                    //         ->url(fn (): string => route('posts.edit', ['post' => $this->post]))
-                    // ])
+                    
                     ->extraModalFooterActions([
                         Action::make('Imprimir')
                             ->url(fn (Mantenimiento $record): string => route('pdf.ficha', ['mantenimiento' => $record]))
+                            ->color('success')
+                            ->extraAttributes([
+                                'target' => '_blank',
+                            ])
                     ])
+                    ->modalSubmitActionLabel('Guardar')
                     ->action(function (array $data,Mantenimiento $record): void {
                         $ficha = $record->fichaTecnica;
                         if(!$ficha) {
@@ -380,11 +426,17 @@ class MantenimientosRelationManager extends RelationManager
                         $ficha->recomendacion_sistagua = $data['recomendacion_sistagua'];
                         $ficha->mantenimiento_id = $record->id;
                         $ficha->save();
+
+                        Notification::make()
+                            ->title('Ficha técnica creada correctamemte.')
+                            ->success()
+                            ->send();
                         $recipient = Auth::user();
                         Notification::make()
                             ->title('Ficha técnica creada correctamemte.')
                             ->sendToDatabase($recipient);
                     }),
+                    
                                            
                     
                 Tables\Actions\EditAction::make(),

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('ficha_tecnicas', function (Blueprint $table) {
             $table->id();
             $table->integer('numero');
-            $table->string('detalle_tds',100);
+            $table->string('detalle_tds',100)->nullable();
             $table->string('dureza_color_tds',100)->nullable();
             $table->text('recomendacion_tds')->nullable();
             $table->string('detalle_ppm',100)->nullable();
