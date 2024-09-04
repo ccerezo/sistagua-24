@@ -2,14 +2,18 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Pages as GeneralPages;
 use App\Filament\Resources\ControlResource\Pages;
 use App\Filament\Resources\ControlResource\RelationManagers;
 use App\Models\Control;
 use App\Models\Domicilio;
 use App\Models\Empresa;
 use Filament\Forms;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Pages\Page;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -28,33 +32,38 @@ class ControlResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\MorphToSelect::make('controlable')
-                    ->types([
+                Group::make()->schema([
+                    Section::make()->schema([
+                    Forms\Components\MorphToSelect::make('controlable')
+                        ->label('Cliente')
+                        ->types([
+                            
                         Forms\Components\MorphToSelect\Type::make(Domicilio::class)
-                            ->getOptionLabelFromRecordUsing(fn (Domicilio $record): string => "{$record->apellido1} {$record->apellido1} {$record->nombre1} {$record->nombre2}"),
+                            ->getOptionLabelFromRecordUsing(fn (Domicilio $record): string => "{$record->apellido1} {$record->apellido1} {$record->nombre1} {$record->nombre2} - {$record->codigo}"),
                         Forms\Components\MorphToSelect\Type::make(Empresa::class)
-                            ->titleAttribute('nombre')
+                            ->titleAttribute('nombre')                            
+                            
+                        ])->columnSpanFull()
+                        ->searchable()
+                        ->preload(),
                     ])
-                    ->searchable()
-                    ->preload()
-                    ->columnSpan(3),
-
-                Forms\Components\TextInput::make('tds')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('ppm')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\DatePicker::make('fecha_compra')
-                    
+                ])->columnSpan(3),
                 
-                // Forms\Components\TextInput::make('controlable_type')
-                //     ->required()
-                //     ->maxLength(255),
-                // Forms\Components\TextInput::make('controlable_id')
-                //     ->required()
-                //     ->numeric(),
-            ])->columns(3);
+                
+                Group::make()->schema([
+                    Section::make()->schema([
+                        Forms\Components\TextInput::make('tds')
+                        ->required()
+                        ->numeric(),
+                        Forms\Components\TextInput::make('ppm')
+                        ->required()
+                        ->numeric(),
+                        Forms\Components\DatePicker::make('fecha_compra')
+                        ->columnSpanFull(),
+                    ])->columns(2)
+                ])->columnSpan(2)
+                
+            ])->columns(5);
     }
 
     public static function table(Table $table): Table
@@ -160,6 +169,7 @@ class ControlResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -181,6 +191,17 @@ class ControlResource extends Resource
             'index' => Pages\ListControls::route('/'),
             'create' => Pages\CreateControl::route('/create'),
             'edit' => Pages\EditControl::route('/{record}/edit'),
+            //'historial' => GeneralPages\ProductosHistorial::route('{record}/historial'),
+            'historial' => Pages\HistorialProductos::route('/{record}/historial'),
         ];
     }
+
+    // public static function getRecordSubNavigation(Page $page): array
+    // {
+    //     return $page->generateNavigationItems([
+    //         // ...
+    //         Pages\HistorialProductos::class,
+    //     ]);
+    // }
+
 }

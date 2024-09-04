@@ -12,16 +12,19 @@ use App\Models\Mantenimiento;
 use App\Models\ProductosUsado;
 use Filament\Forms;
 use Filament\Actions\Action;
+
 use Filament\Forms\Components\Group;
+
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\TextEntry;
+
 use Filament\Notifications\Notification;
+use Filament\Pages\Page;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -33,6 +36,7 @@ use stdClass;
 class MantenimientosRelationManager extends RelationManager
 {
     protected static string $relationship = 'mantenimientos';
+    
     // protected function mutateFormDataBeforeCreate(array $data): array
     // {
     //     dd($data);
@@ -140,6 +144,34 @@ class MantenimientosRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
+                
+                Tables\Actions\Action::make('Historial')
+                    ->modalContent(function (ProductosUsado $records ): View {
+                        
+                        $mantenimientos = Mantenimiento::select('id')->where('control_id',$this->getOwnerRecord()->getKey())->get();
+                        $records = ProductosUsado::whereIn('mantenimiento_id',$mantenimientos)->get();
+                        
+                        return view('filament.pages.actions.historial-productos-usados',
+                            ['records' => $records]);
+                    })
+                    ->modalSubmitAction(false)
+                    ->slideOver(),
+                
+                Tables\Actions\Action::make('Historial 2')
+                    ->modalContent(view('livewire.historial-productos', ['record' => 2]))
+                    ->modalSubmitAction(false)
+                    ->slideOver(),    
+                // Tables\Actions\Action::make('Historial V2')
+                //     ->modalContent(function (ProductosUsado $records ): View {
+                        
+                //         $mantenimientos = Mantenimiento::select('id')->where('control_id',$this->getOwnerRecord()->getKey())->get();
+                //         $records = ProductosUsado::whereIn('mantenimiento_id',$mantenimientos)->get();
+                        
+                //         return view('filament.pages.productos-historial',
+                //             ['records' => $records]);
+                //     })
+                //     ->modalSubmitAction(false)
+                //     ->slideOver(),
                 Tables\Actions\CreateAction::make('NUEVO')
                     ->label('Agregar Mantenimiento')
                     ->mutateFormDataUsing(function (array $data): array {
@@ -154,6 +186,7 @@ class MantenimientosRelationManager extends RelationManager
                     })
             ])
             ->actions([
+                
                 Tables\Actions\Action::make('Firmar')
                     ->fillForm(fn (Mantenimiento $record): array => [
                         'firmar' => $record->firma,
@@ -448,4 +481,11 @@ class MantenimientosRelationManager extends RelationManager
                 ]),
             ]);
     }
+
+    // public static function getRecordSubNavigation(Page $page): array
+    // {
+    //     return $page->generateNavigationItems([
+    //         Pages\HistorialProductos::class,
+    //     ]);
+    // }
 }
