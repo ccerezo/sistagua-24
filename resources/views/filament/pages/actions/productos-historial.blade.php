@@ -1,3 +1,3 @@
 <div>
-    <h1>hola</h1>
+    <livewire:historial-productos :record="$record" >
 </div>

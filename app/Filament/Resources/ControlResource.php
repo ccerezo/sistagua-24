@@ -191,8 +191,6 @@ class ControlResource extends Resource
             'index' => Pages\ListControls::route('/'),
             'create' => Pages\CreateControl::route('/create'),
             'edit' => Pages\EditControl::route('/{record}/edit'),
-            //'historial' => GeneralPages\ProductosHistorial::route('{record}/historial'),
-            'historial' => Pages\HistorialProductos::route('/{record}/historial'),
         ];
     }
 

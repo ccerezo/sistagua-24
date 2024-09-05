@@ -144,34 +144,21 @@ class MantenimientosRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                
-                Tables\Actions\Action::make('Historial')
-                    ->modalContent(function (ProductosUsado $records ): View {
-                        
-                        $mantenimientos = Mantenimiento::select('id')->where('control_id',$this->getOwnerRecord()->getKey())->get();
-                        $records = ProductosUsado::whereIn('mantenimiento_id',$mantenimientos)->get();
-                        
-                        return view('filament.pages.actions.historial-productos-usados',
-                            ['records' => $records]);
-                    })
-                    ->modalSubmitAction(false)
-                    ->slideOver(),
-                
-                Tables\Actions\Action::make('Historial 2')
-                    ->modalContent(view('livewire.historial-productos', ['record' => 2]))
-                    ->modalSubmitAction(false)
-                    ->slideOver(),    
-                // Tables\Actions\Action::make('Historial V2')
+                // Tables\Actions\Action::make('Historial')
                 //     ->modalContent(function (ProductosUsado $records ): View {
                         
                 //         $mantenimientos = Mantenimiento::select('id')->where('control_id',$this->getOwnerRecord()->getKey())->get();
                 //         $records = ProductosUsado::whereIn('mantenimiento_id',$mantenimientos)->get();
                         
-                //         return view('filament.pages.productos-historial',
+                //         return view('filament.pages.actions.historial-productos-usados',
                 //             ['records' => $records]);
                 //     })
                 //     ->modalSubmitAction(false)
                 //     ->slideOver(),
+                Tables\Actions\Action::make('Historial')
+                    ->modalContent(view('filament.pages.actions.productos-historial', ['record' => $this->getOwnerRecord()->getKey()]))
+                    ->modalSubmitAction(false)
+                    ->slideOver(),    
                 Tables\Actions\CreateAction::make('NUEVO')
                     ->label('Agregar Mantenimiento')
                     ->mutateFormDataUsing(function (array $data): array {
