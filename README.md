@@ -67,3 +67,8 @@ php artisan make:observer MantenimientoObserver --model=Mantenimiento
 php artisan make:model FichaTecnica -m
 
 php artisan make:controller PDFController
+
+php artisan make:model EstadoVisita -m
+php artisan make:model Visita -m
+
+php artisan make:filament-resource Visita --generate

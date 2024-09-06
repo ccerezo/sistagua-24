@@ -8,4 +8,3 @@ Route::get('/', function () {
     return view('welcome');
 });
 Route::get('reporte/ficha-tecnica/{mantenimiento}', [PDFController::class, 'PdfFicha'])->name('pdf.ficha');
-Route::get('historial-productos', HistorialProductos::class);
