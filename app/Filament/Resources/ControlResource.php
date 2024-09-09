@@ -103,6 +103,7 @@ class ControlResource extends Resource
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('controlable.codigo')
+                    ->label('Código')
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('controlable_type')

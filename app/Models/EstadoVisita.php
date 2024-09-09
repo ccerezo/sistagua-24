@@ -11,7 +11,7 @@ class EstadoVisita extends Model
 
     protected $fillable = ['nombre','color','active'];
 
-    public function mantenimientos() {
+    public function visitas() {
         return $this->hasMany(Visita::class);
     }
 }
