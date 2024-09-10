@@ -125,7 +125,7 @@ class ControlResource extends Resource
                     ->searchable(),
                     
                 Tables\Columns\TextColumn::make('controlable_id')
-                    ->label('Nombre Cliente')
+                    ->label('Cliente')
                     ->state(function (Control $record): string {
                         if($record->controlable_type == Domicilio::class){
                             $domicilio = Domicilio::find($record->controlable_id);

@@ -10,6 +10,8 @@ use App\Models\Empresa;
 use App\Models\FichaTecnica;
 use App\Models\Mantenimiento;
 use App\Models\ProductosUsado;
+use App\Models\Visita;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Actions\Action;
 
@@ -155,6 +157,48 @@ class MantenimientosRelationManager extends RelationManager
                 //     })
                 //     ->modalSubmitAction(false)
                 //     ->slideOver(),
+                Tables\Actions\Action::make('Próxima Visita')
+                    ->fillForm(function (array $data): array {
+                        $fecha = Carbon::now();
+                        $fecha = $fecha->addMonths(6);
+                        //$data['fecha'] = $fecha->year.'-'.$fecha->month;
+                        $data['fecha'] = $fecha;
+                        return $data;
+                    })
+                    ->form([
+                        Forms\Components\DatePicker::make('fecha')
+                            ->native(false)
+                            ->displayFormat('Y-F-d')
+                            ->locale('es')
+                        // Forms\Components\DatePicker::make('fecha')
+                        //     ->seconds(false)
+                        //     ->native(false)
+                        //     ->displayFormat('Y-F')
+                        //     ->locale('es')
+                        //     ->extraInputAttributes(['step' => '3']),                                                
+                        
+                    ])
+                    ->action(function (array $data): void {
+                        $latestVisita = Visita::latest()->first();
+                        dd($latestVisita);
+                        if($this->getOwnerRecord()->controlable_type == Domicilio::class){
+                            $domicilio = Domicilio::find($this->getOwnerRecord()->controlable_id);
+                            
+                            $domicilio->visitas()->create([
+                                'fecha' => $data['fecha'],
+                                'realizada' => false,
+                                'numero' => $latestVisita->numero+1,
+                                'estado_visita_id' => 1
+                            ]);
+                        }
+                        
+                        $recipient = Auth::user();
+                        Notification::make()
+                            ->title('Próxima visita Agendado')
+                            //->body('Mantenimiento realizado: '. $record->fecha)
+                            ->sendToDatabase($recipient);
+                    })
+                    ->slideOver(),
                 Tables\Actions\Action::make('Historial')
                     ->modalContent(view('filament.pages.actions.productos-historial', ['record' => $this->getOwnerRecord()->getKey()]))
                     ->modalSubmitAction(false)
@@ -169,6 +213,10 @@ class MantenimientosRelationManager extends RelationManager
                             ->title('Mantenimiento guardado correctamente.')
                             ->body('TDS: ' .$data['tds'].' y PPM: '.$data['ppm'])
                             ->sendToDatabase($recipient);
+                        Notification::make()
+                            ->title('')
+                            ->success()
+                            ->send();
                         return $data;
                     })
             ])

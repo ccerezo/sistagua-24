@@ -68,4 +68,8 @@ class Domicilio extends Model
     {
         return $this->MorphOne(Control::class, 'controlable');
     }
+    public function visitas(): MorphToMany
+    {
+        return $this->morphToMany(Visita::class, 'visitaable');
+    }
 }

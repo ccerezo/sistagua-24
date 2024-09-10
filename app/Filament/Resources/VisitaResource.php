@@ -110,8 +110,17 @@ class VisitaResource extends Resource
                 })
                 ->searchable(),
                 Tables\Columns\TextColumn::make('visitaable_id')
-                    ->numeric()
-                    ->sortable(),
+                    ->label('Cliente')
+                    ->state(function (Visita $record): string {
+                        if($record->visitaable_type == Domicilio::class){
+                            $domicilio = Domicilio::find($record->visitaable_id);
+                            return $domicilio->fullname;
+                        }
+                        if($record->visitaable_type == Empresa::class){
+                            $empresa = Empresa::find($record->visitaable_id);
+                            return $empresa->nombre;
+                        }
+                    }),
                 Tables\Columns\IconColumn::make('realizada')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('estadoVisita.nombre')
