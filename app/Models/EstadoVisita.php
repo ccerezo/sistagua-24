@@ -9,7 +9,7 @@ class EstadoVisita extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nombre','color','active'];
+    protected $fillable = ['nombre','codigo','color','active'];
 
     public function visitas() {
         return $this->hasMany(Visita::class);

@@ -11,12 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('estado_visitas', function (Blueprint $table) {
+        Schema::create('proxima_visitas', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre',60);
-            $table->string('codigo',3)->nullable();
-            $table->string('color',50)->nullable();
-            $table->boolean('active')->default(true);
+            $table->text('observacion');
+            $table->integer('visita_id')->unique()->constrained('visitas')->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -26,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('estado_visitas');
+        Schema::dropIfExists('proxima_visitas');
     }
 };

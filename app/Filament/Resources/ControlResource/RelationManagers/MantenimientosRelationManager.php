@@ -160,7 +160,7 @@ class MantenimientosRelationManager extends RelationManager
                 Tables\Actions\Action::make('Próxima Visita')
                     ->fillForm(function (array $data): array {
                         $fecha = Carbon::now();
-                        $fecha = $fecha->addMonths(6);
+                        //$fecha = $fecha->addMonths(6);
                         //$data['fecha'] = $fecha->year.'-'.$fecha->month;
                         $data['fecha'] = $fecha;
                         return $data;
@@ -180,16 +180,25 @@ class MantenimientosRelationManager extends RelationManager
                     ])
                     ->action(function (array $data): void {
                         $latestVisita = Visita::latest()->first();
-                        dd($latestVisita);
+                        //dd($latestVisita);
+                        $fecha = Carbon::now();
                         if($this->getOwnerRecord()->controlable_type == Domicilio::class){
                             $domicilio = Domicilio::find($this->getOwnerRecord()->controlable_id);
-                            
+                            $periodo = $domicilio->grupo->periodo;
+                            (strcmp($periodo, 'Trimestral') == 0) ? $fecha = $fecha->addMonths(3) : ((strcmp($periodo, 'Semestral') == 0) ? $fecha = $fecha->addMonths(6) : '');
+                            dd($fecha);
                             $domicilio->visitas()->create([
                                 'fecha' => $data['fecha'],
                                 'realizada' => false,
                                 'numero' => $latestVisita->numero+1,
                                 'estado_visita_id' => 1
                             ]);
+                        }
+                        if($this->getOwnerRecord()->controlable_type == Empresa::class){
+                            $empresa = Empresa::find($this->getOwnerRecord()->controlable_id);
+                            $periodo = $empresa->grupo->periodo;
+                            (strcmp($periodo, 'Trimestral') == 0) ? $fecha = $fecha->addMonths(3) : ((strcmp($periodo, 'Semestral') == 0) ? $fecha = $fecha->addMonths(6) : '');
+                            dd($fecha);
                         }
                         
                         $recipient = Auth::user();

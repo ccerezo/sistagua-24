@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Visita extends Model
@@ -19,5 +20,10 @@ class Visita extends Model
 
     public function estadoVisita() {
         return $this->belongsTo(EstadoVisita::class);
+    }
+
+    public function proximaVisita(): BelongsTo
+    {
+        return $this->belongsTo(ProximaVisita::class);
     }
 }
