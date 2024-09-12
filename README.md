@@ -73,3 +73,6 @@ php artisan make:model Visita -m
 php artisan make:filament-resource Visita --generate
 
 php artisan make:model ProximaVisita -m
+
+php artisan make:livewire infoVisita
+php artisan make:filament-page infoVisita

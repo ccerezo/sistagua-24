@@ -43,7 +43,6 @@ class MantenimientoObserver
                 'estado_visita_id' => 1
             ]);
             
-            
         }
     }
 
@@ -60,7 +59,8 @@ class MantenimientoObserver
      */
     public function deleted(Mantenimiento $mantenimiento): void
     {
-        //
+        $ficha = FichaTecnica::where('mantenimiento_id', $mantenimiento->id);
+        $ficha->delete();
     }
 
     /**

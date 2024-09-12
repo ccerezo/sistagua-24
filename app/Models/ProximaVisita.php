@@ -9,7 +9,7 @@ class ProximaVisita extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['observacion'];
+    protected $fillable = ['observacion','visita_id'];
 
     public function visita() {
         return $this->hasOne(Visita::class);
