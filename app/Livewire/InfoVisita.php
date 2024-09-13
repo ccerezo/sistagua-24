@@ -30,17 +30,14 @@ class InfoVisita extends Component implements HasForms, HasActions
             $domicilio = Domicilio::find($control->controlable_id);
             $this->visita = Visita::where('visitaable_id',$domicilio->id)->latest()->first();
         }
-        $this->proximaVisita = ProximaVisita::where('visita_id',$this->visita->id)->first();
-        $this->form->fill($this->proximaVisita->toArray());
-        // $data = ProximaVisita::where('visita_id',$this->proximaVisita->id)->first();
-        // //dd($data);
-        // if($data)
-        //     $this->form->fill($data->toArray());
-        // else{
-        //     $data['observacion'] = '';
-        //     $data['visita_id'] = $this->proximaVisita->id;
-        //     $this->form->fill($data);
-        // }
+        $data = ProximaVisita::where('visita_id',$this->visita->id)->first();
+        if($data)
+            $this->form->fill($data->toArray());
+        else{
+            $data['observacion'] = '';
+            $data['visita_id'] = $this->visita->id;
+            $this->form->fill($data);
+        }
             
     }
 
@@ -53,15 +50,15 @@ class InfoVisita extends Component implements HasForms, HasActions
                 Forms\Components\Hidden::make('visita_id')
             ])
             ->statePath('data')
-            ->model($this->proximaVisita);
+            ->model(ProximaVisita::class);
     }
 
     public function create(): void
     {
-        //dd($this->data);
-        //dd($this->form->getState());
-        $pv = ProximaVisita::Create($this->data);
-        $this->form->model($pv)->saveRelationships();
+        ProximaVisita::updateOrCreate(
+            ['visita_id' => $this->data['visita_id']],
+            $this->data
+         );
         Notification::make()
             ->title('Recordatorio creado correctamente.')
             ->success()

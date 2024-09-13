@@ -159,7 +159,7 @@ class MantenimientosRelationManager extends RelationManager
                 //     ->slideOver(),
                 Tables\Actions\Action::make('Próxima Visita')
                     ->modalContent(view('filament.pages.info-visita', ['record' => $this->getOwnerRecord()->getKey()]))
-                    //->modalSubmitAction(false)
+                    ->modalSubmitAction(false)
                     ->slideOver(),
                 Tables\Actions\Action::make('Historial')
                     ->modalContent(view('filament.pages.actions.productos-historial', ['record' => $this->getOwnerRecord()->getKey()]))
@@ -352,8 +352,6 @@ class MantenimientosRelationManager extends RelationManager
                             $data['cliente'] = $empresa->nombre.' - '.$empresa->codigo;
                         }
                         
-                        //$data = array_merge($data, $data_tmp);
-                        //dd($data);
                         return $data;
                     })
                     ->form([
