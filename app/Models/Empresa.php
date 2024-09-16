@@ -60,4 +60,8 @@ class Empresa extends Model
     {
         return $this->MorphOne(Control::class, 'controlable');
     }
+    public function visitas(): morphMany
+    {
+        return $this->morphMany(Visita::class, 'visitaable');
+    }
 }

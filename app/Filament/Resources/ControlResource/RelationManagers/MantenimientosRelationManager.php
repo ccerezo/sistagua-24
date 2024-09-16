@@ -14,7 +14,7 @@ use App\Models\Visita;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Actions\Action;
-
+use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\Group;
 
 use Filament\Forms\Form;
@@ -127,17 +127,20 @@ class MantenimientosRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('N°')
                     ->badge()
                     ->getStateUsing(fn (stdClass $rowLoop): string => $rowLoop->remaining+1),
-                Tables\Columns\TextColumn::make('tipo_doc'),
-                Tables\Columns\TextColumn::make('numero'),
+                Tables\Columns\TextColumn::make('tipo_doc')
+                    ->description(fn (Mantenimiento $record): string => $record->numero),
                 Tables\Columns\TextColumn::make('tds'),
                 Tables\Columns\TextColumn::make('ppm'),
                 Tables\Columns\IconColumn::make('notificado')
+                    ->label('Notify')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('descripcion')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('autoriza.fullname')
                     ->description(fn (Mantenimiento $record): string => $record->autoriza->identificacion),
                 Tables\Columns\TextColumn::make('fecha')
+                    ->since()
+                    ->dateTimeTooltip()
                     ->label('Realizado')
                     ->description(fn (Mantenimiento $record): string => $record->user->name),
             ])
@@ -160,10 +163,12 @@ class MantenimientosRelationManager extends RelationManager
                 Tables\Actions\Action::make('Próxima Visita')
                     ->modalContent(view('filament.pages.info-visita', ['record' => $this->getOwnerRecord()->getKey()]))
                     ->modalSubmitAction(false)
+                    ->color('warning')
                     ->slideOver(),
                 Tables\Actions\Action::make('Historial')
                     ->modalContent(view('filament.pages.actions.productos-historial', ['record' => $this->getOwnerRecord()->getKey()]))
                     ->modalSubmitAction(false)
+                    ->color('pink')
                     ->slideOver(),    
                 Tables\Actions\CreateAction::make('NUEVO')
                     ->label('Agregar Mantenimiento')
@@ -184,291 +189,299 @@ class MantenimientosRelationManager extends RelationManager
             ])
             ->actions([
                 
-                Tables\Actions\Action::make('Firmar')
-                    ->fillForm(fn (Mantenimiento $record): array => [
-                        'firmar' => $record->firma,
-                    ])
-                    ->form([
-                        SignaturePad::make('firmar')
-                            ->dotSize(2.0)
-                            ->lineMinWidth(0.5)
-                            ->lineMaxWidth(2.5)
-                            ->throttle(16)
-                            ->minDistance(5)
-                            ->velocityFilterWeight(0.7)
-                            ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
-                            ->backgroundColorOnDark('#f0a')     // Background color on dark mode (defaults to backgroundColor)
-                            ->penColor('#00f')                  // Pen color on light mode
-                            ->penColorOnDark('#fff')            // Pen color on dark mode (defaults to penColor)
-                    ])
-                    ->action(function (array $data, Mantenimiento $record): void {
-                        $record->firma = $data['firmar'];
-                        $record->save();
-                        $recipient = Auth::user();
-                        Notification::make()
-                            ->title('El Mantenimiento ha sido firmado.')
-                            ->sendToDatabase($recipient);
-                    }),
-                Tables\Actions\Action::make('Productos')
-                    ->fillForm(fn (Mantenimiento $record): array => [
-                        'productoUsados' => [
-                            'producto_id' => $record->producto_id,
-                            'cantidad' => $record->cantidad,
-                        ]
-                    ])
-                    ->form([
-                        Forms\Components\Repeater::make('productoUsados')
-                        ->relationship('productoUsados')
-                        ->schema([
-                            Group::make()->schema([
-                                Forms\Components\Select::make('producto_id')
-                                    ->relationship('producto', 'nombre')
-                                    ->searchable()
-                                    ->preload()
-                                    ->required(),
-                                Forms\Components\TextInput::make('cantidad')
-                                    ->required()
-                                    ->default(1)
-                                    ->numeric(),
-                            ])->columns(2)
-                            
-                        ]),
-                    ])
-                    ->action(function (array $data): void {
-                        
-                        $recipient = Auth::user();
-                        Notification::make()
-                            ->title('Productos usados en la ficha técnica.')
-                            ->sendToDatabase($recipient);
-                    }),
-
-                Tables\Actions\Action::make('Enviar Correo')
-                    ->fillForm(function (Mantenimiento $record): array {
-                        
-                        $control = Control::find($record->control_id);
-                        $data['dataCorreos'] = [];
-                        if($control->controlable_type == Domicilio::class){
-                            $domicilio = Domicilio::find($control->controlable_id);
-                            if($domicilio->correo){
-                                array_push($data['dataCorreos'], 
-                                    ['nombreCompleto' => $domicilio->fullname, 'tipoContacto' => 'Cliente', 'correo' =>$domicilio->correo]);
-                            }
-                            foreach ($domicilio->contactos as $contacto) {
-                                if($contacto->correo)
-                                    array_push($data['dataCorreos'], 
-                                    ['nombreCompleto' => $contacto->fullname, 'tipoContacto' => $contacto->tipoContacto->nombre, 'correo' =>$contacto->correo]);
-                            }
-                                                        
-                        }
-                        if($control->controlable_type == Empresa::class){
-                            $empresa = Empresa::find($control->controlable_id);
-                            if($empresa->correo) {
-                                array_push($data['dataCorreos'], 
-                                    ['nombreCompleto' => $empresa->nombre, 'tipoContacto' => 'Empresa', 'correo' =>$empresa->correo]);
-                            }
-                                
-                            foreach ($empresa->contactos as $contacto) {
-                                if($contacto->correo)
-                                    array_push($data['dataCorreos'], 
-                                        ['nombreCompleto' => $contacto->fullname, 'tipoContacto' => $contacto->tipoContacto->nombre, 'correo' =>$contacto->correo]);
-                            }
-                        }
-                        
-                        return $data;
-                    })
-                    ->form([
-                        Forms\Components\Repeater::make('dataCorreos')
-                        ->label('Correos Registrados del Cliente')
-                            ->schema([
-                                Forms\Components\TextInput::make('nombreCompleto')->required(),
-                                Forms\Components\TextInput::make('tipoContacto')->required(),
-                                Forms\Components\TextInput::make('correo')->required(),
-                            ])->columns(3)
-                            ->addActionLabel('Agregar Correo')
-                    ])
-                    ->action(function (array $data, Mantenimiento $record): void {
-                        $record->notificado = true;
-                        $record->save();
-                        $control = Control::find($record->control_id);
-                        $enviar_a = array();
-                        if($control->controlable_type == Domicilio::class){
-                            $domicilio = Domicilio::find($control->controlable_id);
-                            if($domicilio->correo) array_push($enviar_a, $domicilio->correo);
-                            foreach ($domicilio->contactos as $contacto) {
-                                if($contacto->correo) array_push($enviar_a, $contacto->correo);
-                                $body = new MailMantenimiento($control, $domicilio);
-                            }
-                            $data['correos'] = array_merge(...$enviar_a);
-                        }
-                        if($control->controlable_type == Empresa::class){
-                            $empresa = Empresa::find($control->controlable_id);
-                            if($empresa->correo) array_push($enviar_a, $empresa->correo);
-                            foreach ($empresa->contactos as $contacto) {
-                                if($contacto->correo) array_push($enviar_a, $contacto->correo);
-                                $body = new MailMantenimiento($control, $empresa);
-                            }
-                            $data['correos'] = array_merge(...$enviar_a);
-                        }
-                                                
-                        Mail::to($data['correos'])->send($body);
-
-                        $recipient = Auth::user();
-                        Notification::make()
-                            ->title('Correo Enviado!.')
-                            ->body('Mantenimiento realizado: '. $record->fecha)
-                            ->sendToDatabase($recipient);
-                        Notification::make()
-                            ->title('Notificación enviada por correo.')
-                            ->success()
-                            ->send();
-                                                
-                    }),
-                Tables\Actions\Action::make('Ficha técnica')
-                    ->fillForm(function (array $data, Mantenimiento $record): array {
-                        $ficha = $record->fichaTecnica;
-                        if($ficha) {
-                            $data = $ficha->toArray();
-                        }
-                        $data['numero'] = $record->numero_ficha;
-                        $data['fecha'] = $record->fecha;
-                        $data['tds'] = $record->tds;
-                        $data['ppm'] = $record->ppm;
-                        $data['firma'] = $record->firma;    
-                        $data['productoUsados'] = [];
-                                                
-                       
-                        foreach ($record->productoUsados as $item) {
-                            array_push($data['productoUsados'], ['producto_id' => $item->producto_id,
-                                                                'cantidad' => $item->cantidad]);
-                        }
-                        $control = Control::find($record->control_id);
-                        if($control->controlable_type == Domicilio::class){
-                            $domicilio = Domicilio::find($control->controlable_id);
-                            $data['cliente'] = $domicilio->fullname.' - '.$domicilio->codigo;
-                                                                                    
-                        }
-                        if($control->controlable_type == Empresa::class){
-                            $empresa = Empresa::find($control->controlable_id);
-                            $data['cliente'] = $empresa->nombre.' - '.$empresa->codigo;
-                        }
-                        
-                        return $data;
-                    })
-                    ->form([
-                        Forms\Components\Fieldset::make('FICHA TÉCNICA CONTROL DE EQUIPO ÓSMOSIS INVERSA Y FILTROS')
-                            
-                            ->schema([
-                                Forms\Components\TextInput::make('numero')->disabled(),
-                                Forms\Components\TextInput::make('cliente')->columnSpan(3),
-                                Forms\Components\TextInput::make('fecha')->columnSpan(2),
-                            ])->columns(6),
-
-                        Forms\Components\Section::make('MEDICIÓN DE CALIDAD DE AGUA')
-                            ->description('CON TDS Y ANALIZADOR DE DUREZA ANTES DEL INGRESO AL ÓSMOSIS INVERSA O FILTROS')
-                            ->schema([
-                                Forms\Components\Select::make('detalle_tds')
-                                    ->required()
-                                    ->options([
-                                        'BUENO' => 'BUENO',
-                                        'NORMAL' => 'NORMAL',
-                                        'MALO' => 'MALO',
-                                    ]),
-                                Forms\Components\TextInput::make('tds'),
-                                Forms\Components\TextInput::make('dureza_color_tds'),
-                                Forms\Components\TextInput::make('recomendacion_tds')->columnSpan(3)
-                            ])->columns(6),
-                        Forms\Components\Section::make('MEDICIÓN DE CALIDAD DE AGUA')
-                            ->description('CON TDS, PURIFICADA A TRAVÉS DE ÓSMOSIS INVERSA')
-                            ->schema([
-                                Forms\Components\Select::make('detalle_ppm')
-                                    ->required()
-                                    ->options([
-                                        'BUENO' => 'BUENO',
-                                        'NORMAL' => 'NORMAL',
-                                        'MALO' => 'MALO',
-                                    ]),
-                                Forms\Components\TextInput::make('ppm'),
-                                Forms\Components\TextInput::make('recomendacion_ppm')->columnSpan(3)
-                            ])->columns(5),
-                        Forms\Components\Section::make('MANTENIMIENTO PREVENTIVO Y CORRECTIVO DE ACCESORIOS DEL ÓSMOSIS INVERSA Y FILTROS')
-                            ->schema([
-                                Forms\Components\Repeater::make('productoUsados')
-                                    ->relationship('productoUsados')
-                                    ->schema([
-                                        Forms\Components\Select::make('producto_id')
-                                            ->relationship('producto', 'nombre')->disabled()->columnSpan(4),
-                                        Forms\Components\TextInput::make('cantidad')
-                                            ->label('Cant.'),
-                                        ])
-                                    ->addable(false)
-                                    ->deletable(false)
-                                    ->reorderable(false)
-                                    ->columns(5)
-                                    ]),
-                        Forms\Components\Section::make([        
-                        Forms\Components\TextInput::make('total')
-                            ->numeric()
-                            ->required()
-                            ->default(0)
-                            ->prefix('$')->columnStart(4),
-                        Forms\Components\Section::make('Observación por personal autorizado de SISTAGUA:')
-                            ->schema([
-                                Forms\Components\Textarea::make('recomendacion_sistagua')                                
-                                ]),
-                        SignaturePad::make('firma')
-                            ->clearable(false)
-                            ->undoable(false)
-                            ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
-                            ->backgroundColorOnDark('#f0a')     // Background color on dark mode (defaults to backgroundColor)
-                            ->penColor('#00f')                  // Pen color on light mode
-                            ->penColorOnDark('#fff')            // Pen color on dark mode (defaults to penColor)
-                            ->hidden(fn (Get $get): bool => ! $get('firma'))
-                            ->columnSpanFull()
-                        ])->columns(4)
-                        
-                    ])
+                
+                Tables\Actions\ActionGroup::make([
                     
-                    ->extraModalFooterActions([
-                        Action::make('Imprimir')
-                            ->url(fn (Mantenimiento $record): string => route('pdf.ficha', ['mantenimiento' => $record]))
-                            ->color('success')
-                            ->extraAttributes([
-                                'target' => '_blank',
-                            ])
-                    ])
-                    ->modalSubmitActionLabel('Guardar')
-                    ->action(function (array $data,Mantenimiento $record): void {
-                        $ficha = $record->fichaTecnica;
-                        if(!$ficha) {
-                            $ficha = new FichaTecnica(); 
-                        }
-                        //dd($data);
-                        
-                        $ficha->numero = $data['numero'];
-                        $ficha->detalle_tds = $data['detalle_tds'];
-                        $ficha->dureza_color_tds = $data['dureza_color_tds'];
-                        $ficha->recomendacion_tds = $data['recomendacion_tds'];
-                        $ficha->detalle_ppm = $data['detalle_ppm'];
-                        $ficha->recomendacion_ppm = $data['recomendacion_ppm'];
-                        $ficha->total = $data['total'];
-                        $ficha->recomendacion_sistagua = $data['recomendacion_sistagua'];
-                        $ficha->mantenimiento_id = $record->id;
-                        $ficha->save();
+                    Tables\Actions\Action::make('Firmar')
+                        ->icon('heroicon-o-pencil')
+                        ->fillForm(fn (Mantenimiento $record): array => [
+                            'firmar' => $record->firma,
+                        ])
+                        ->form([
+                            SignaturePad::make('firmar')
+                                ->dotSize(2.0)
+                                ->lineMinWidth(0.5)
+                                ->lineMaxWidth(2.5)
+                                ->throttle(16)
+                                ->minDistance(5)
+                                ->velocityFilterWeight(0.7)
+                                ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
+                                ->backgroundColorOnDark('#f0a')     // Background color on dark mode (defaults to backgroundColor)
+                                ->penColor('#00f')                  // Pen color on light mode
+                                ->penColorOnDark('#fff')            // Pen color on dark mode (defaults to penColor)
+                        ])
+                        ->action(function (array $data, Mantenimiento $record): void {
+                            $record->firma = $data['firmar'];
+                            $record->save();
+                            $recipient = Auth::user();
+                            Notification::make()
+                                ->title('El Mantenimiento ha sido firmado.')
+                                ->sendToDatabase($recipient);
+                        }),
+                    Tables\Actions\Action::make('Productos')
+                        ->icon('heroicon-o-rectangle-stack')
+                        ->fillForm(fn (Mantenimiento $record): array => [
+                            'productoUsados' => [
+                                'producto_id' => $record->producto_id,
+                                'cantidad' => $record->cantidad,
+                            ]
+                        ])
+                        ->form([
+                            Forms\Components\Repeater::make('productoUsados')
+                            ->relationship('productoUsados')
+                            ->schema([
+                                Group::make()->schema([
+                                    Forms\Components\Select::make('producto_id')
+                                        ->relationship('producto', 'nombre')
+                                        ->searchable()
+                                        ->preload()
+                                        ->required(),
+                                    Forms\Components\TextInput::make('cantidad')
+                                        ->required()
+                                        ->default(1)
+                                        ->numeric(),
+                                ])->columns(2)
+                                
+                            ]),
+                        ])
+                        ->action(function (array $data): void {
+                            
+                            $recipient = Auth::user();
+                            Notification::make()
+                                ->title('Productos usados en la ficha técnica.')
+                                ->sendToDatabase($recipient);
+                        }),
 
-                        Notification::make()
-                            ->title('Ficha técnica creada correctamemte.')
-                            ->success()
-                            ->send();
-                        $recipient = Auth::user();
-                        Notification::make()
-                            ->title('Ficha técnica creada correctamemte.')
-                            ->sendToDatabase($recipient);
-                    }),
+                    Tables\Actions\Action::make('Enviar Correo')
+                        ->icon('heroicon-m-paper-airplane')
+                        ->fillForm(function (Mantenimiento $record): array {
+                            
+                            $control = Control::find($record->control_id);
+                            $data['dataCorreos'] = [];
+                            if($control->controlable_type == Domicilio::class){
+                                $domicilio = Domicilio::find($control->controlable_id);
+                                if($domicilio->correo){
+                                    array_push($data['dataCorreos'], 
+                                        ['nombreCompleto' => $domicilio->fullname, 'tipoContacto' => 'Cliente', 'correo' =>$domicilio->correo]);
+                                }
+                                foreach ($domicilio->contactos as $contacto) {
+                                    if($contacto->correo)
+                                        array_push($data['dataCorreos'], 
+                                        ['nombreCompleto' => $contacto->fullname, 'tipoContacto' => $contacto->tipoContacto->nombre, 'correo' =>$contacto->correo]);
+                                }
+                                                            
+                            }
+                            if($control->controlable_type == Empresa::class){
+                                $empresa = Empresa::find($control->controlable_id);
+                                if($empresa->correo) {
+                                    array_push($data['dataCorreos'], 
+                                        ['nombreCompleto' => $empresa->nombre, 'tipoContacto' => 'Empresa', 'correo' =>$empresa->correo]);
+                                }
+                                    
+                                foreach ($empresa->contactos as $contacto) {
+                                    if($contacto->correo)
+                                        array_push($data['dataCorreos'], 
+                                            ['nombreCompleto' => $contacto->fullname, 'tipoContacto' => $contacto->tipoContacto->nombre, 'correo' =>$contacto->correo]);
+                                }
+                            }
+                            
+                            return $data;
+                        })
+                        ->form([
+                            Forms\Components\Repeater::make('dataCorreos')
+                            ->label('Correos Registrados del Cliente')
+                                ->schema([
+                                    Forms\Components\TextInput::make('nombreCompleto')->required(),
+                                    Forms\Components\TextInput::make('tipoContacto')->required(),
+                                    Forms\Components\TextInput::make('correo')->required(),
+                                ])->columns(3)
+                                ->addActionLabel('Agregar Correo')
+                        ])
+                        ->action(function (array $data, Mantenimiento $record): void {
+                            $record->notificado = true;
+                            $record->save();
+                            $control = Control::find($record->control_id);
+                            $enviar_a = array();
+                            if($control->controlable_type == Domicilio::class){
+                                $domicilio = Domicilio::find($control->controlable_id);
+                                if($domicilio->correo) array_push($enviar_a, $domicilio->correo);
+                                foreach ($domicilio->contactos as $contacto) {
+                                    if($contacto->correo) array_push($enviar_a, $contacto->correo);
+                                    $body = new MailMantenimiento($control, $domicilio);
+                                }
+                                $data['correos'] = array_merge(...$enviar_a);
+                            }
+                            if($control->controlable_type == Empresa::class){
+                                $empresa = Empresa::find($control->controlable_id);
+                                if($empresa->correo) array_push($enviar_a, $empresa->correo);
+                                foreach ($empresa->contactos as $contacto) {
+                                    if($contacto->correo) array_push($enviar_a, $contacto->correo);
+                                    $body = new MailMantenimiento($control, $empresa);
+                                }
+                                $data['correos'] = array_merge(...$enviar_a);
+                            }
+                                                    
+                            Mail::to($data['correos'])->send($body);
+
+                            $recipient = Auth::user();
+                            Notification::make()
+                                ->title('Correo Enviado!.')
+                                ->body('Mantenimiento realizado: '. $record->fecha)
+                                ->sendToDatabase($recipient);
+                            Notification::make()
+                                ->title('Notificación enviada por correo.')
+                                ->success()
+                                ->send();
+                                                    
+                        }),
+                    Tables\Actions\Action::make('Ficha técnica')
+                        ->icon('heroicon-c-document-text')
+                        ->fillForm(function (array $data, Mantenimiento $record): array {
+                            $ficha = $record->fichaTecnica;
+                            if($ficha) {
+                                $data = $ficha->toArray();
+                            }
+                            $data['numero'] = $record->numero_ficha;
+                            $data['fecha'] = $record->fecha;
+                            $data['tds'] = $record->tds;
+                            $data['ppm'] = $record->ppm;
+                            $data['firma'] = $record->firma;    
+                            $data['productoUsados'] = [];
+                                                    
+                        
+                            foreach ($record->productoUsados as $item) {
+                                array_push($data['productoUsados'], ['producto_id' => $item->producto_id,
+                                                                    'cantidad' => $item->cantidad]);
+                            }
+                            $control = Control::find($record->control_id);
+                            if($control->controlable_type == Domicilio::class){
+                                $domicilio = Domicilio::find($control->controlable_id);
+                                $data['cliente'] = $domicilio->fullname.' - '.$domicilio->codigo;
+                                                                                        
+                            }
+                            if($control->controlable_type == Empresa::class){
+                                $empresa = Empresa::find($control->controlable_id);
+                                $data['cliente'] = $empresa->nombre.' - '.$empresa->codigo;
+                            }
+                            
+                            return $data;
+                        })
+                        ->form([
+                            Forms\Components\Fieldset::make('FICHA TÉCNICA CONTROL DE EQUIPO ÓSMOSIS INVERSA Y FILTROS')
+                                
+                                ->schema([
+                                    Forms\Components\TextInput::make('numero')->disabled(),
+                                    Forms\Components\TextInput::make('cliente')->columnSpan(3),
+                                    Forms\Components\TextInput::make('fecha')->columnSpan(2),
+                                ])->columns(6),
+
+                            Forms\Components\Section::make('MEDICIÓN DE CALIDAD DE AGUA')
+                                ->description('CON TDS Y ANALIZADOR DE DUREZA ANTES DEL INGRESO AL ÓSMOSIS INVERSA O FILTROS')
+                                ->schema([
+                                    Forms\Components\Select::make('detalle_tds')
+                                        ->required()
+                                        ->options([
+                                            'BUENO' => 'BUENO',
+                                            'NORMAL' => 'NORMAL',
+                                            'MALO' => 'MALO',
+                                        ]),
+                                    Forms\Components\TextInput::make('tds'),
+                                    Forms\Components\TextInput::make('dureza_color_tds'),
+                                    Forms\Components\TextInput::make('recomendacion_tds')->columnSpan(3)
+                                ])->columns(6),
+                            Forms\Components\Section::make('MEDICIÓN DE CALIDAD DE AGUA')
+                                ->description('CON TDS, PURIFICADA A TRAVÉS DE ÓSMOSIS INVERSA')
+                                ->schema([
+                                    Forms\Components\Select::make('detalle_ppm')
+                                        ->required()
+                                        ->options([
+                                            'BUENO' => 'BUENO',
+                                            'NORMAL' => 'NORMAL',
+                                            'MALO' => 'MALO',
+                                        ]),
+                                    Forms\Components\TextInput::make('ppm'),
+                                    Forms\Components\TextInput::make('recomendacion_ppm')->columnSpan(3)
+                                ])->columns(5),
+                            Forms\Components\Section::make('MANTENIMIENTO PREVENTIVO Y CORRECTIVO DE ACCESORIOS DEL ÓSMOSIS INVERSA Y FILTROS')
+                                ->schema([
+                                    Forms\Components\Repeater::make('productoUsados')
+                                        ->relationship('productoUsados')
+                                        ->schema([
+                                            Forms\Components\Select::make('producto_id')
+                                                ->relationship('producto', 'nombre')->disabled()->columnSpan(4),
+                                            Forms\Components\TextInput::make('cantidad')
+                                                ->label('Cant.'),
+                                            ])
+                                        ->addable(false)
+                                        ->deletable(false)
+                                        ->reorderable(false)
+                                        ->columns(5)
+                                        ]),
+                            Forms\Components\Section::make([        
+                            Forms\Components\TextInput::make('total')
+                                ->numeric()
+                                ->required()
+                                ->default(0)
+                                ->prefix('$')->columnStart(4),
+                            Forms\Components\Section::make('Observación por personal autorizado de SISTAGUA:')
+                                ->schema([
+                                    Forms\Components\Textarea::make('recomendacion_sistagua')                                
+                                    ]),
+                            SignaturePad::make('firma')
+                                ->clearable(false)
+                                ->undoable(false)
+                                ->backgroundColor('rgba(0,0,0,0)')  // Background color on light mode
+                                ->backgroundColorOnDark('#f0a')     // Background color on dark mode (defaults to backgroundColor)
+                                ->penColor('#00f')                  // Pen color on light mode
+                                ->penColorOnDark('#fff')            // Pen color on dark mode (defaults to penColor)
+                                ->hidden(fn (Get $get): bool => ! $get('firma'))
+                                ->columnSpanFull()
+                            ])->columns(4)
+                            
+                        ])
+                        
+                        ->extraModalFooterActions([
+                            Action::make('Imprimir')
+                                ->url(fn (Mantenimiento $record): string => route('pdf.ficha', ['mantenimiento' => $record]))
+                                ->color('success')
+                                ->extraAttributes([
+                                    'target' => '_blank',
+                                ])
+                        ])
+                        ->modalSubmitActionLabel('Guardar')
+                        ->action(function (array $data,Mantenimiento $record): void {
+                            $ficha = $record->fichaTecnica;
+                            if(!$ficha) {
+                                $ficha = new FichaTecnica(); 
+                            }
+                            //dd($data);
+                            
+                            $ficha->numero = $data['numero'];
+                            $ficha->detalle_tds = $data['detalle_tds'];
+                            $ficha->dureza_color_tds = $data['dureza_color_tds'];
+                            $ficha->recomendacion_tds = $data['recomendacion_tds'];
+                            $ficha->detalle_ppm = $data['detalle_ppm'];
+                            $ficha->recomendacion_ppm = $data['recomendacion_ppm'];
+                            $ficha->total = $data['total'];
+                            $ficha->recomendacion_sistagua = $data['recomendacion_sistagua'];
+                            $ficha->mantenimiento_id = $record->id;
+                            $ficha->save();
+
+                            Notification::make()
+                                ->title('Ficha técnica creada correctamemte.')
+                                ->success()
+                                ->send();
+                            $recipient = Auth::user();
+                            Notification::make()
+                                ->title('Ficha técnica creada correctamemte.')
+                                ->sendToDatabase($recipient);
+                        }),
                     
                                            
                     
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ])
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

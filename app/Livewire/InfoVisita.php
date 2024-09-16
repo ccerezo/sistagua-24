@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Control;
 use App\Models\Domicilio;
+use App\Models\Empresa;
 use App\Models\ProximaVisita;
 use App\Models\Visita;
 use Filament\Actions\Action;
@@ -26,10 +27,18 @@ class InfoVisita extends Component implements HasForms, HasActions
     
     public function mount(Control $control)
     {
-        if($control->controlable_type == Domicilio::class){
-            $domicilio = Domicilio::find($control->controlable_id);
-            $this->visita = Visita::where('visitaable_id',$domicilio->id)->latest()->first();
-        }
+        // if($control->controlable_type == Domicilio::class){
+        //     $domicilio = Domicilio::find($control->controlable_id);
+        //     $this->visita = Visita::where('visitaable_id',$domicilio->id)->latest()->first();
+        // }
+        // if($control->controlable_type == Empresa::class){
+        //     $empresa = Empresa::find($control->controlable_id);
+        //     $this->visita = Visita::where('visitaable_id',$empresa->id)->latest()->first();
+        // }
+        $this->visita = Visita::where('visitaable_type',$control->controlable_type)
+                                ->where('visitaable_id',$control->controlable_id)
+                                ->latest()->first();
+        
         $data = ProximaVisita::where('visita_id',$this->visita->id)->first();
         if($data)
             $this->form->fill($data->toArray());

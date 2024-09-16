@@ -8,6 +8,8 @@ use App\Filament\Resources\ControlResource\RelationManagers;
 use App\Models\Control;
 use App\Models\Domicilio;
 use App\Models\Empresa;
+use App\Models\Mantenimiento;
+use DateTime;
 use Filament\Forms;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Section;
@@ -98,7 +100,12 @@ class ControlResource extends Resource
                 Tables\Columns\TextColumn::make('ultimo_mantenimiento')
                     ->label('Último Mant.')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->state(function (Control $record): string {
+                        $ultimoMant = Mantenimiento::where('control_id',$record->id)
+                                ->latest()->first();
+                        return $ultimoMant->fecha;
+                    }),
                 Tables\Columns\TextColumn::make('controlable.identificacion')
                     ->sortable()
                     ->searchable(),

@@ -44,6 +44,18 @@ class MantenimientoObserver
             ]);
             
         }
+        if($control->controlable_type == Empresa::class){
+            $empresa = Empresa::find($control->controlable_id);
+            $periodo = $empresa->grupo->periodo;
+            (strcmp($periodo, 'Trimestral') == 0) ? $fecha = $fecha->addMonths(3) : ((strcmp($periodo, 'Semestral') == 0) ? $fecha = $fecha->addMonths(6) : '');
+            $empresa->visitas()->create([
+                'fecha' => $fecha,
+                'realizada' => false,
+                'numero' => $numero,
+                'estado_visita_id' => 1
+            ]);
+            
+        }
     }
 
     /**
