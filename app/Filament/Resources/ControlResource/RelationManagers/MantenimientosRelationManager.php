@@ -181,7 +181,7 @@ class MantenimientosRelationManager extends RelationManager
                             ->body('TDS: ' .$data['tds'].' y PPM: '.$data['ppm'])
                             ->sendToDatabase($recipient);
                         Notification::make()
-                            ->title('')
+                            ->title('Creado Correctamente.')
                             ->success()
                             ->send();
                         return $data;
@@ -214,6 +214,10 @@ class MantenimientosRelationManager extends RelationManager
                             $record->firma = $data['firmar'];
                             $record->save();
                             $recipient = Auth::user();
+                            Notification::make()
+                                ->title('Firmado Correctamente.')
+                                ->success()
+                                ->send();
                             Notification::make()
                                 ->title('El Mantenimiento ha sido firmado.')
                                 ->sendToDatabase($recipient);

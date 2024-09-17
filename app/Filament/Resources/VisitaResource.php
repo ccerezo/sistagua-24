@@ -4,9 +4,11 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\VisitaResource\Pages;
 use App\Filament\Resources\VisitaResource\RelationManagers;
+use App\Models\Direccion;
 use App\Models\Domicilio;
 use App\Models\Empresa;
 use App\Models\Visita;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Section;
@@ -90,12 +92,14 @@ class VisitaResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->striped()
             ->columns([
                 Tables\Columns\TextColumn::make('numero')
+                    ->label('N°')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('fecha')
-                    ->dateTime()
+                    ->dateTime('M j, Y, H:i')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('visitaable_type')
                 ->label('Tipo')
@@ -111,7 +115,8 @@ class VisitaResource extends Resource
                 ->searchable(),
                 Tables\Columns\TextColumn::make('visitaable_id')
                     ->label('Cliente')
-                    ->state(function (Visita $record): string {
+                    ->searchable()
+                    ->getStateUsing(function (Visita $record): string {
                         if($record->visitaable_type == Domicilio::class){
                             $domicilio = Domicilio::find($record->visitaable_id);
                             return $domicilio->fullname;
@@ -120,12 +125,60 @@ class VisitaResource extends Resource
                             $empresa = Empresa::find($record->visitaable_id);
                             return $empresa->nombre;
                         }
+                    })
+                    ->description(function (Visita $record): string {
+                        if($record->visitaable_type == Domicilio::class){
+                            $domicilio = Domicilio::find($record->visitaable_id);
+                            return $domicilio->codigo;
+                        }
+                        if($record->visitaable_type == Empresa::class){
+                            $empresa = Empresa::find($record->visitaable_id);
+                            return $empresa->codigo;
+                        }
+                    })
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHasMorph(
+                            'visitaable', [Domicilio::class, Empresa::class],
+                            function ($query, $type) use ($search) {
+                                // $column = $type === Domicilio::class ? 'concat_ws(" ", apellido1, apellido2, nombre1, nombre2)' : 'nombre';
+                                // $query->whereRaw($column, 'like', '%'.$search.'%');
+                                if ($type === Domicilio::class) {
+                                    $query->where('nombre1', 'like', '%'.$search.'%')
+                                        ->orWhere('apellido1', 'like', '%'.$search.'%');
+                                } elseif ($type === Empresa::class) {
+                                    $query->where('nombre', 'like', '%'.$search.'%');
+                                }
+                            }
+                        );
                     }),
+                Tables\Columns\TextColumn::make('Direccion')
+                    ->state(function (Visita $record): string {
+                        $direccion = Direccion::where('direccionable_type',$record->visitaable_type)
+                                            ->where('direccionable_id',$record->visitaable_id)
+                                            ->where('equipos_instalados',true)->first();
+                        return $direccion->ciudad->nombre;
+                        
+                    })
+                    ->description(function (Visita $record): string {
+                        $direccion = Direccion::where('direccionable_type',$record->visitaable_type)
+                                            ->where('direccionable_id',$record->visitaable_id)
+                                            ->where('equipos_instalados',true)->first();
+                        return $direccion->direccion;
+                        
+                    }),
+
                 Tables\Columns\IconColumn::make('realizada')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('estadoVisita.nombre')
-                    ->numeric()
-                    ->sortable(),
+                    ->searchable()
+                    
+                    ->color(fn (string $state): string => match ($state) {
+                        'Agendado' => 'gray',
+                        'Terminada' => 'success',
+                        'Postergada' => 'pink',
+                        'rejected' => 'danger',
+                    }),
+                
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -136,8 +189,44 @@ class VisitaResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('visitaable_type')
+                    ->options([
+                        Domicilio::class => 'Domicilio',
+                        Empresa::class => 'Empresa',
+                    ]),
+                Tables\Filters\SelectFilter::make('estadoVisita')
+                    ->relationship('estadoVisita', 'nombre'),
+                Tables\Filters\Filter::make('fecha')
+                    ->form([
+                        Forms\Components\DatePicker::make('fecha_desde'),
+                        Forms\Components\DatePicker::make('fecha_hasta')
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['fecha_desde'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('fecha', '>=', $date),
+                            )
+                            ->when(
+                                $data['fecha_hasta'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('fecha', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if (! $data['fecha_desde']) {
+                            return null;
+                        }
+                 
+                        return 'Desde: ' . Carbon::parse($data['fecha_desde'])->toFormattedDateString() .
+                                ' - Hasta: ' . Carbon::parse($data['fecha_hasta'])->toFormattedDateString();
+                    })
             ])
+            ->filtersTriggerAction(
+                fn (Tables\Actions\Action $action) => $action
+                    ->button()
+                    ->slideOver()
+                    ->label('Búsquedad Avanza'),
+            )
             ->actions([
                 Tables\Actions\EditAction::make(),
             ])

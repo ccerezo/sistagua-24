@@ -133,7 +133,7 @@ class ControlResource extends Resource
                     
                 Tables\Columns\TextColumn::make('controlable_id')
                     ->label('Cliente')
-                    ->state(function (Control $record): string {
+                    ->formatStateUsing(function (Control $record): string {
                         if($record->controlable_type == Domicilio::class){
                             $domicilio = Domicilio::find($record->controlable_id);
                             return $domicilio->fullname;
@@ -142,9 +142,8 @@ class ControlResource extends Resource
                             $empresa = Empresa::find($record->controlable_id);
                             return $empresa->nombre;
                         }
-                        return '';
-                    })
-                    ->searchable(),
+                    }),
+                    
                     // ->description(function (Control $record): string {
                     //     if($record->controlable_type == Domicilio::class){
                     //         $domicilio = Domicilio::find($record->controlable_id);
