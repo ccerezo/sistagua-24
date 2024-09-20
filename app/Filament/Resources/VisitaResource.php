@@ -19,13 +19,20 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class VisitaResource extends Resource
 {
     protected static ?string $model = Visita::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-c-calendar-days';
+
+    // public static function getEloquentQuery(): Builder
+    //     {
+    //         return parent::getEloquentQuery()
+    //             ->with('visitaable.direccions.ciudad');
+    //     }
 
     public static function form(Form $form): Form
     {
@@ -94,6 +101,7 @@ class VisitaResource extends Resource
     {
         return $table
             ->striped()
+            //->modifyQueryUsing(fn (Builder $query) => $query->with(['visitaable.direccions.ciudad']))
             ->columns([
                 Tables\Columns\TextColumn::make('numero')
                     ->label('N°')
@@ -103,12 +111,34 @@ class VisitaResource extends Resource
                     ->dateTime('M j, Y, H:i')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('visitaable.direccions.ciudad.nombre')
+                    //->searchable(),
                     ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query
-                            ->with(['direccions' => function ($query) use ($search) {
-                                $query->where('direccions.direccion', 'like', "%{$search}%");
+                        return $query->with(['visitaable' => function (MorphTo $morphTo) {
+                            $morphTo->constrain([
+                                Domicilio::class => function ($query) {
+                                    $query->whereNull('hidden_at');
+                                },
+                                Empresa::class => function ($query) {
+                                    $query->where('type', 'educational');
+                                },
+                                Direccion::class => function ($query) {
+                                    $query->where('direccion', "Garzal");
+                                },
+                            ]);
                         }]);
                     }),
+                    //->searchable(['direccions.ciudad']),
+                    // ->searchable(query: function (Builder $query, string $search): Builder {
+                    //     return $query
+                    //         ->with(['visitaable' => function (MorphTo $query) {
+                    //             $query->morphWith([
+                    //                 Domicilio::class => ['direccions.ciudad'],
+                    //                 Empresa::class => ['direccions.ciudad'],
+                    //             ])->where('nombre', 'like', 'naranjal');
+                    //         }]);
+                    //     }),
+                    
+                    
                 Tables\Columns\TextColumn::make('visitaable_type')
                 ->label('Tipo')
                 ->badge()
@@ -143,26 +173,26 @@ class VisitaResource extends Resource
                             $empresa = Empresa::find($record->visitaable_id);
                             return $empresa->codigo;
                         }
+                    })
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHasMorph(
+                            'visitaable', [Domicilio::class, Empresa::class],
+                            function ($query, $type) use ($search) {
+                                // $column = $type === Domicilio::class ? 'apellido1, apellido2, nombre1, nombre2' : 'nombre';
+                                // $query->whereRaw("concat_ws(' ',$column)", 'like', '%'.$search.'%');
+                                if ($type === Domicilio::class) {
+                                    $query->where('nombre1', 'like', '%'.$search.'%')
+                                        ->orWhere('nombre2', 'like', '%'.$search.'%')
+                                        ->orWhere('apellido1', 'like', '%'.$search.'%')
+                                        ->orWhere('apellido2', 'like', '%'.$search.'%')
+                                        ->orWhere('codigo', 'like', $search.'%');
+                                } elseif ($type === Empresa::class) {
+                                    $query->where('nombre', 'like', '%'.$search.'%')
+                                            ->orWhere('codigo', 'like', $search.'%');
+                                }
+                            }
+                        );
                     }),
-                    // ->searchable(query: function (Builder $query, string $search): Builder {
-                    //     return $query->whereHasMorph(
-                    //         'visitaable', [Domicilio::class, Empresa::class],
-                    //         function ($query, $type) use ($search) {
-                    //             // $column = $type === Domicilio::class ? 'apellido1, apellido2, nombre1, nombre2' : 'nombre';
-                    //             // $query->whereRaw("concat_ws(' ',$column)", 'like', '%'.$search.'%');
-                    //             if ($type === Domicilio::class) {
-                    //                 $query->where('nombre1', 'like', '%'.$search.'%')
-                    //                     ->orWhere('nombre2', 'like', '%'.$search.'%')
-                    //                     ->orWhere('apellido1', 'like', '%'.$search.'%')
-                    //                     ->orWhere('apellido2', 'like', '%'.$search.'%')
-                    //                     ->orWhere('codigo', 'like', $search.'%');
-                    //             } elseif ($type === Empresa::class) {
-                    //                 $query->where('nombre', 'like', '%'.$search.'%')
-                    //                         ->orWhere('codigo', 'like', $search.'%');
-                    //             }
-                    //         }
-                    //     );
-                    // }),
                 Tables\Columns\TextColumn::make('Direccion')
                     ->state(function (Visita $record): string {
                         $direccion = Direccion::where('direccionable_type',$record->visitaable_type)
