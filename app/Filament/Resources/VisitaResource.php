@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class VisitaResource extends Resource
+class VisitaResource extends Resource 
 {
     protected static ?string $model = Visita::class;
 
@@ -216,7 +216,14 @@ class VisitaResource extends Resource
                         Empresa::class => 'Empresa',
                     ]),
                 Tables\Filters\TernaryFilter::make('realizada')
-                    ->nullable(),
+                    ->nullable()
+                    ->trueLabel('SI')
+                    ->falseLabel('NO')
+                    ->queries(
+                        true: fn (Builder $query) => $query->where('realizada', true),
+                        false: fn (Builder $query) => $query->where('realizada', false),
+                        blank: fn (Builder $query) => $query, // In this example, we do not want to filter the query when it is blank.
+                    ),
                 Tables\Filters\SelectFilter::make('estadoVisita')
                     ->relationship('estadoVisita', 'nombre'),
 

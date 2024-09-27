@@ -21,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        //date_default_timezone_set('America/Guayaquil');
         FilamentColor::register([
             'pink' => Color::Pink,
         ]);
