@@ -16,6 +16,10 @@ class Visita extends Model implements Eventable
 
     protected $guarded = [];
 
+    protected $casts = [
+        'fecha' => 'datetime',
+    ];
+
     public function visitaable(): MorphTo
     {
         return $this->morphTo();
@@ -31,13 +35,16 @@ class Visita extends Model implements Eventable
     }
 
     public function toEvent(): Event|array {
-        $fechaCarbon = Carbon::parse($this->fecha);
-        $fecha = Event::make($this)
-            ->title($this->numero)
-            ->start($fechaCarbon)
-            ->end($fechaCarbon->addHour(1));
-
-            //dd($fecha);
-            return $fecha;
+        $fechaStart = Carbon::parse($this->fecha);
+        $fechaEnd = Carbon::parse($this->fecha)->addHour(2);
+        //dd($this);
+        $this->visitaable_type === Domicilio::class ? $titulo = $this->visitaable->fullname : $titulo = $this->visitaable->nombre ;
+        $event = Event::make($this)
+            ->title($titulo)
+            ->start($this->fecha)
+            ->end($this->fecha)
+            ->display('block');
+            //dd($event);
+            return $event;
     }
 }

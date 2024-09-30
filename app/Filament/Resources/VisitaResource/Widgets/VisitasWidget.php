@@ -4,58 +4,122 @@ namespace App\Filament\Resources\VisitaResource\Widgets;
 
 use App\Models\Visita;
 use Carbon\Carbon;
+use Filament\Actions\ActionGroup;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Widgets\Widget;
+use Guava\Calendar\Actions\CreateAction;
 use Guava\Calendar\Contracts\Eventable;
 use Guava\Calendar\ValueObjects\Event;
 use Guava\Calendar\Widgets\CalendarWidget;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 
 class VisitasWidget extends CalendarWidget
 {
     //protected static string $view = 'filament.resources.visita-resource.widgets.visitas-widget';
-    protected ?string $locale = 'es';
-    //protected ?string $timeZone = 'America/Guayaquil';
-    protected string $calendarView = 'dayGridMonth';
+    protected bool $eventClickEnabled = true;
+
     protected bool $eventDragEnabled = true;
+
+    protected bool $eventResizeEnabled = true;
+    protected ?string $defaultEventClickAction = 'edit';
 
     
     public function getEvents(array $fetchInfo = []): Collection | array
     {
-        $visitas = Visita::all();
-        return $visitas->map(function (Visita $visita) {
-            return $visita->toEvent();
-        })->toArray();
-        // return [
-             
-        //     //Eloquent model implementing the `Eventable` interface
-            
-        //     Visita::all()->toArray()
-        // ];
+        // $visitas = Visita::all();
+        //return $visitas->map(function (Visita $visita) {
+        //     return $visita->toEvent();
+        // })->toArray();
+        
+        return collect()->push(...Visita::query()->get());
+        
     }
+    public function getEventContent(): null | string | array
+    {
+        return [
+            Visita::class => view('filament.resources.visita-resource.widgets.visitas-calendar'),
+        ];
+    }
+    public function getHeaderActions(): array
+    {
+        return [
+                CreateAction::make('createMeeting')
+                    ->model(Visita::class),
+            ];
+    }
+
+    public function getEventClickContextMenuActions(): array
+    {
+        return [
+            $this->editAction(),
+            $this->deleteAction(),
+        ];
+    }
+
+
     public function onEventDrop(array $info = []): bool
     {
         // Don't forget to call the parent method to resolve the event record
         parent::onEventDrop($info);
-    
-        dd($info);
-        // Validate the data
-        // Update the record ($this->getEventRecord())
-        //dd($this->getEventRecord());
+        $record = $this->getEventRecord();
 
-        // $info contains the event data:
-        // $info['event'] - the event object
-        // $info['oldEvent'] - the event object before resizing
-        // $info['oldResource'] - the old resource object
-        // $info['newResource'] - the new resource object
-        // $info['delta'] - the duration object representing the amount of time the event was moved by
-        // $info['view'] - the view object
-        if($info['oldEvent']['start'] == $info['event']['start']) return false;
-        //dd($info['event']['start']);
-        dd(Carbon::parse($info['event']['start'], 'America/Guayaquil'));
-        $this->getEventRecord()->fecha = Carbon::parse($info['event']['start'], 'America/Guayaquil');
-        $this->getEventRecord()->save();
-        return true;
-        // Return true if the event was moved successfully
-        // Return false if the event was not moved and should be reverted on the client-side
+        if ($delta = data_get($info, 'delta')) {
+            $startsAt = $record->fecha;
+            $startsAt->addSeconds(data_get($delta, 'seconds'));
+            $record->update([
+                'fecha' => $startsAt,
+            ]);
+
+            Notification::make()
+                ->title('Visita fue actualizada!')
+                ->success()
+                ->send()
+            ;
+            return true;
+        }
+
+        return false;
+        
     }
+
+    public function getSchema(?string $model = null): ?array
+    {
+        return match ($model) {
+            Visita::class => [
+                
+                Group::make([
+                    DateTimePicker::make('fecha')
+                        ->native(false)
+                        ->seconds(false)
+                        ->required(),
+                    DateTimePicker::make('ends_at')
+                        ->native(false)
+                        ->seconds(false)
+                        ->required(),
+                ])->columns(),
+            ]
+        };
+    }
+
+    public function getDateClickContextMenuActions(): array
+    {
+        return [
+            CreateAction::make('VISITAAAAS')
+                ->model(Visita::class)
+                ->mountUsing(function (Form $form, array $arguments) {
+                    $date = data_get($arguments, 'dateStr');
+
+                    if ($date) {
+                        $form->fill([
+                            'starts_at' => Carbon::make($date)->setHour(12),
+                            'ends_at' => Carbon::make($date)->setHour(13),
+                        ]);
+                    }
+                }),
+        ];
+    }
+
 }
