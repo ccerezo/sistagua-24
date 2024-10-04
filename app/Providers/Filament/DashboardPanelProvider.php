@@ -41,7 +41,7 @@ class DashboardPanelProvider extends PanelProvider
             ->widgets([
                 //Widgets\AccountWidget::class,
                 //Widgets\FilamentInfoWidget::class,
-                VisitasWidget::class,
+                VisitasWidget::class
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -55,7 +55,14 @@ class DashboardPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->databaseNotifications()
-            ->plugin(\RickDBCN\FilamentEmail\FilamentEmail::make())
+            
+            ->plugin(
+                \Saade\FilamentFullCalendar\FilamentFullCalendarPlugin::make()
+                    ->selectable()
+            )
+            ->plugin(
+                \RickDBCN\FilamentEmail\FilamentEmail::make()
+            )
             ->authMiddleware([
                 Authenticate::class,
             ]);
