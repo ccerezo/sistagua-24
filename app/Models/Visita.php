@@ -12,7 +12,7 @@ class Visita extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = ['numero','fecha','observacion','realizada','estado_visita_id'];
 
     public function visitaable(): MorphTo
     {

@@ -56,12 +56,13 @@ class DashboardPanelProvider extends PanelProvider
             ])
             ->databaseNotifications()
             
-            ->plugin(
+            ->plugins([
+                \RickDBCN\FilamentEmail\FilamentEmail::make(),
                 \Saade\FilamentFullCalendar\FilamentFullCalendarPlugin::make()
                     ->selectable()
-            )
-            ->plugin(
-                \RickDBCN\FilamentEmail\FilamentEmail::make()
+                    ->editable()
+                    ->locale('es')
+                ]
             )
             ->authMiddleware([
                 Authenticate::class,

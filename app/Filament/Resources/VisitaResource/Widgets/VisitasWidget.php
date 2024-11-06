@@ -29,9 +29,8 @@ class VisitasWidget extends FullCalendarWidget
                     ->backgroundColor($event->estadoVisita->color)
                     ->start($event->fecha)
                     ->end($event->fecha)
-                    ->toArray()   
             )
-            ->all();
+            ->toArray();
     }
 
     public function getFormSchema(): array
@@ -50,17 +49,16 @@ class VisitasWidget extends FullCalendarWidget
                 Forms\Components\MorphToSelect::make('visitaable')
                     ->label('Cliente')
                     ->types([
-                        
-                    Forms\Components\MorphToSelect\Type::make(Domicilio::class)
-                        ->getOptionLabelFromRecordUsing(fn (Domicilio $record): string => "{$record->apellido1} {$record->apellido1} {$record->nombre1} {$record->nombre2} - {$record->codigo}"),
-                    Forms\Components\MorphToSelect\Type::make(Empresa::class)
-                        ->titleAttribute('nombre')                            
+                        Forms\Components\MorphToSelect\Type::make(Domicilio::class)
+                            ->getOptionLabelFromRecordUsing(fn (Domicilio $record): string => "{$record->apellido1} {$record->apellido2} {$record->nombre1} {$record->nombre2} - {$record->codigo}"),
+                        Forms\Components\MorphToSelect\Type::make(Empresa::class)
+                            ->titleAttribute('nombre')                            
                         
                     ])->columnSpanFull()
                     ->searchable()
                     ->preload(),
                 ])
-            ])->columnSpan(2),
+            ])->columnSpan(2)->model($this->model),
 
             Group::make()->schema([
                 Section::make()->schema([
