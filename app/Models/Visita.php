@@ -12,8 +12,9 @@ class Visita extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['numero','fecha','observacion','realizada','estado_visita_id'];
+    //protected $fillable = ['numero','fecha','observacion','realizada','estado_visita_id'];
 
+    protected $guarded = [];
     public function visitaable(): MorphTo
     {
         return $this->morphTo();

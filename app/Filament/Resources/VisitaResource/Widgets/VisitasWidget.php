@@ -12,6 +12,7 @@ use Filament\Widgets\Widget;
 use Illuminate\Database\Eloquent\Model;
 use Saade\FilamentFullCalendar\Data\EventData;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
+use Saade\FilamentFullCalendar\Actions;
 
 class VisitasWidget extends FullCalendarWidget
 {
@@ -25,7 +26,7 @@ class VisitasWidget extends FullCalendarWidget
             ->map(
                 fn (Visita $event) => EventData::make() 
                     ->id($event->id)
-                    ->title($event->numero)
+                    ->title($event->visitaable->fullname)
                     ->backgroundColor($event->estadoVisita->color)
                     ->start($event->fecha)
                     ->end($event->fecha)
@@ -36,6 +37,7 @@ class VisitasWidget extends FullCalendarWidget
     public function getFormSchema(): array
     {
         return [
+            
             Group::make()->schema([
                 Section::make()->schema([
                     Group::make()->schema([
@@ -90,6 +92,21 @@ class VisitasWidget extends FullCalendarWidget
                         ->columnSpanFull(),
                 ])->columns(2)
             ])->columnSpan(2),
+        ];
+    }
+
+    protected function headerActions(): array
+    {
+        return [
+            Actions\CreateAction::make()
+                ->model(Visita::class)
+                ->action(function (array $data): void {
+                    //dd($data);
+                    $visita = new Visita($data);
+                    $visita->save();
+                    // $record->author()->associate($data['authorId']);
+                    // $record->save();
+                }),
         ];
     }
 }

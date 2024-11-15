@@ -51,12 +51,13 @@ class ContactosRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Contactos de Empresa')
+            ->heading('Contactos de Domiclio')
             ->recordTitleAttribute('tipo_contacto_id')
             ->columns([
                 Tables\Columns\TextColumn::make('tipoContacto.nombre'),
                 Tables\Columns\TextColumn::make('fullname'),
                 Tables\Columns\TextColumn::make('telefono')->badge(),
+                Tables\Columns\TextColumn::make('correo'),
                 Tables\Columns\TextColumn::make('cumpleanios')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\IconColumn::make('coordinar_visita')

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Empresa extends Model
 {
@@ -19,6 +20,12 @@ class Empresa extends Model
         'images' => 'array',
         'correo' => 'array',
     ];
+
+    public function fullname(): Attribute {
+        return Attribute::make(
+            get: fn ($value, $attributes) => $attributes['nombre'] 
+        );
+    }
     
     public function categoria() {
         return $this->belongsTo(Categoria::class);
