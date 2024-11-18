@@ -60,7 +60,7 @@ class DashboardPanelProvider extends PanelProvider
                 \RickDBCN\FilamentEmail\FilamentEmail::make(),
                 \Saade\FilamentFullCalendar\FilamentFullCalendarPlugin::make()
                     ->selectable()
-                    ->editable()
+                    ->editable(true)
                     ->locale('es')
                 ]
             )

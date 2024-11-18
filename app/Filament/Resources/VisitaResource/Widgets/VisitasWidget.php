@@ -39,7 +39,7 @@ class VisitasWidget extends FullCalendarWidget
         return [
             
             Group::make()->schema([
-                Section::make()->schema([
+                
                     Group::make()->schema([
                         Forms\Components\TextInput::make('numero')
                             ->required()
@@ -59,11 +59,11 @@ class VisitasWidget extends FullCalendarWidget
                     ])->columnSpanFull()
                     ->searchable()
                     ->preload(),
-                ])
+                
             ])->columnSpan(2)->model($this->model),
 
             Group::make()->schema([
-                Section::make()->schema([
+                
                     Forms\Components\Select::make('estado_visita_id')
                     ->required()
                     ->preload()
@@ -90,8 +90,8 @@ class VisitasWidget extends FullCalendarWidget
                     
                     Forms\Components\Textarea::make('observacion')
                         ->columnSpanFull(),
-                ])->columns(2)
-            ])->columnSpan(2),
+                
+            ])->columns(2),
         ];
     }
 
@@ -100,13 +100,42 @@ class VisitasWidget extends FullCalendarWidget
         return [
             Actions\CreateAction::make()
                 ->model(Visita::class)
+                ->mountUsing(
+                    function (Forms\Form $form, array $arguments) {
+                    $latestVisita = Visita::latest()->first();
+                        $form->fill([
+                            'numero' => $latestVisita->numero+1 ?? 1
+                        ]);
+                    }
+                )
                 ->action(function (array $data): void {
                     //dd($data);
                     $visita = new Visita($data);
                     $visita->save();
                     // $record->author()->associate($data['authorId']);
                     // $record->save();
+                    
                 }),
+        ];
+    }
+    
+    protected function modalActions(): array
+    {
+        return [
+            Actions\EditAction::make()
+                ->mountUsing(
+                    function (Visita $record, Forms\Form $form, array $arguments) {
+                        //dd($record);
+                        $form->fill([
+                            'fecha' => $arguments['event']['start'] ?? $record->fecha,
+                            'visitaable_type' => $record->visitaable_type,
+                            'visitaable_id' => $record->visitaable_id,
+                            'realizada' => $record->realizada,
+                            'numero' => $record->numero,
+                        ]);
+                }
+            ),
+            Actions\DeleteAction::make(),
         ];
     }
 }
